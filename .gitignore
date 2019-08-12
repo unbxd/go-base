@@ -1,0 +1,55 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj
+_test
+.idea
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+*.exe
+*.test
+*.prof
+
+# Build System Dependencies
+bin
+pkg
+vendor/src
+*.log*
+
+# Visual Studio Code
+.vscode
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Text File
+*.txt
+
+# Mac's DS_Store
+.DS_Store
+
+# Vendor Directory
+vendor/*
+
+# Node Files for Integration Testing
+node_modules
+package.json
+package-lock.json
+
+# util files 
+.env
