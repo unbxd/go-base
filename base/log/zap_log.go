@@ -2,7 +2,6 @@ package log
 
 import (
 	"github.com/pkg/errors"
-	"github.com/uknth/go-base/base/log"
 	"go.uber.org/zap"
 )
 
@@ -10,25 +9,25 @@ type zapLogger struct {
 	zapLogger *zap.Logger
 }
 
-func (zl *zapLogger) convert(fields ...log.Field) []zap.Field {
+func (zl *zapLogger) convert(fields ...Field) []zap.Field {
 	var zfields []zap.Field
 	for _, fl := range fields {
 		switch fl.Type {
-		case log.BOOL:
+		case BOOL:
 			var bl bool
 			if fl.Integer == 1 {
 				bl = true
 			}
 			zfields = append(zfields, zap.Bool(fl.Key, bl))
-		case log.ERROR:
+		case ERROR:
 			zfields = append(zfields, zap.Error(fl.Value.(error)))
-		case log.FLOAT:
+		case FLOAT:
 			zfields = append(zfields, zap.Float64(fl.Key, fl.Value.(float64)))
-		case log.INT:
+		case INT:
 			zfields = append(zfields, zap.Int64(fl.Key, fl.Integer))
-		case log.STRING:
+		case STRING:
 			zfields = append(zfields, zap.String(fl.Key, fl.String))
-		case log.UNKNOWN:
+		case UNKNOWN:
 			zfields = append(zfields, zap.Any(fl.Key, fl.Value))
 		default:
 			zfields = append(zfields, zap.Any(fl.Key, fl.Value))
@@ -37,23 +36,23 @@ func (zl *zapLogger) convert(fields ...log.Field) []zap.Field {
 	return zfields
 }
 
-func (zl *zapLogger) Info(msg string, fields ...log.Field) {
+func (zl *zapLogger) Info(msg string, fields ...Field) {
 	zl.zapLogger.Info(msg, zl.convert(fields...)...)
 }
 
-func (zl *zapLogger) Warn(msg string, fields ...log.Field) {
+func (zl *zapLogger) Warn(msg string, fields ...Field) {
 	zl.zapLogger.Warn(msg, zl.convert(fields...)...)
 }
 
-func (zl *zapLogger) Error(msg string, fields ...log.Field) {
+func (zl *zapLogger) Error(msg string, fields ...Field) {
 	zl.zapLogger.Error(msg, zl.convert(fields...)...)
 }
 
-func (zl *zapLogger) Panic(msg string, fields ...log.Field) {
+func (zl *zapLogger) Panic(msg string, fields ...Field) {
 	zl.zapLogger.Panic(msg, zl.convert(fields...)...)
 }
 
-func (zl *zapLogger) Fatal(msg string, fields ...log.Field) {
+func (zl *zapLogger) Fatal(msg string, fields ...Field) {
 	zl.zapLogger.Fatal(msg, zl.convert(fields...)...)
 }
 
@@ -61,7 +60,7 @@ func (zl *zapLogger) Flush() error {
 	return zl.zapLogger.Sync()
 }
 
-func (zl *zapLogger) With(fields ...log.Field) log.Logger {
+func (zl *zapLogger) With(fields ...Field) Logger {
 	zl.zapLogger = zl.zapLogger.With(zl.convert(fields...)...)
 	return zl
 }
@@ -92,7 +91,7 @@ func NewZapLogger(
 	level string,
 	encoding string,
 	output []string,
-) (log.Logger, error) {
+) (Logger, error) {
 	config := zap.NewProductionConfig()
 
 	config.Level = zapLevel(level)

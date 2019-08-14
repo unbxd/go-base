@@ -10,6 +10,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	// kit_log "github.com/go-kit/kit/log"
+	"net/http"
 	net_http "net/http"
 
 	"github.com/go-kit/kit/metrics"
@@ -18,31 +19,51 @@ import (
 	"github.com/uknth/go-base/base/log"
 )
 
-type ck string
+// ContextKey is key for context
+type ContextKey int
 
+// ContextKeys
 const (
-	contextPopulated ck = "context-populated"
+	ContextKeyRequestMethod ContextKey = iota
+	ContextKeyRequestURI
+	ContextKeyRequestPath
+	ContextKeyRequestProto
+	ContextKeyRequestHost
+	ContextKeyRequestRemoteAddr
+	ContextKeyRequestXForwardedFor
+	ContextKeyRequestXForwardedProto
+	ContextKeyRequestAuthorization
+	ContextKeyRequestReferer
+	ContextKeyRequestUserAgent
+	ContextKeyRequestXRequestID
+	ContextKeyRequestAccept
+	ContextKeyResponseHeaders
+	ContextKeyResponseSize
 )
 
 // NewTraceLoggerFinalizer returns a kit_http.ServerOption for simple trace logging
 func NewTraceLoggerFinalizer(logger log.Logger) kit_http.ServerOption {
 	return kit_http.ServerFinalizer(func(ctx context.Context, code int, r *net_http.Request) {
-		var fields = []log.Field{log.Int("code", code)}
-		if cp := ctx.Value(contextPopulated); cp != nil {
-			for k, ck := range map[string]int{
-				"method":          int(kit_http.ContextKeyRequestMethod),
-				"proto":           int(kit_http.ContextKeyRequestProto),
-				"host":            int(kit_http.ContextKeyRequestHost),
-				"remote_addr":     int(kit_http.ContextKeyRequestRemoteAddr),
-				"x-forwarded-for": int(kit_http.ContextKeyRequestXForwardedFor),
-				"x-request-id":    int(kit_http.ContextKeyRequestXRequestID),
-			} {
-				val := ctx.Value(ck)
-				if val != nil {
-					str := val.(string)
+		// safety check if someone includes logging
+		// but doesn't provide a logger
+		if logger == nil {
+			return
+		}
 
-					fields = append(fields, log.String(k, str))
-				}
+		var fields = []log.Field{log.Int("code", code)}
+		for k, ck := range map[string]ContextKey{
+			"method":          ContextKeyRequestMethod,
+			"proto":           ContextKeyRequestProto,
+			"host":            ContextKeyRequestHost,
+			"remote_addr":     ContextKeyRequestRemoteAddr,
+			"x-forwarded-for": ContextKeyRequestXForwardedFor,
+			"x-request-id":    ContextKeyRequestXRequestID,
+		} {
+			val := ctx.Value(ck)
+			if val != nil {
+				str := val.(string)
+
+				fields = append(fields, log.String(k, str))
 			}
 		}
 
@@ -249,9 +270,25 @@ func NewDeleteHeaderRequestFunc(headers ...string) kit_http.ServerOption {
 // properties extracted from net_http.Request
 func NewPopulateRequestContextRequestFunc() kit_http.ServerOption {
 	return kit_http.ServerBefore(
-		func(ctx context.Context, req *net_http.Request) context.Context {
-			ctx = context.WithValue(ctx, contextPopulated, "true")
-			return kit_http.PopulateRequestContext(ctx, req)
+		func(ctx context.Context, r *http.Request) context.Context {
+			for k, v := range map[ContextKey]string{
+				ContextKeyRequestMethod:          r.Method,
+				ContextKeyRequestURI:             r.RequestURI,
+				ContextKeyRequestPath:            r.URL.Path,
+				ContextKeyRequestProto:           r.Proto,
+				ContextKeyRequestHost:            r.Host,
+				ContextKeyRequestRemoteAddr:      r.RemoteAddr,
+				ContextKeyRequestXForwardedFor:   r.Header.Get("X-Forwarded-For"),
+				ContextKeyRequestXForwardedProto: r.Header.Get("X-Forwarded-Proto"),
+				ContextKeyRequestAuthorization:   r.Header.Get("Authorization"),
+				ContextKeyRequestReferer:         r.Header.Get("Referer"),
+				ContextKeyRequestUserAgent:       r.Header.Get("User-Agent"),
+				ContextKeyRequestXRequestID:      r.Header.Get("X-Request-Id"),
+				ContextKeyRequestAccept:          r.Header.Get("Accept"),
+			} {
+				ctx = context.WithValue(ctx, k, v)
+			}
+			return ctx
 		},
 	)
 }

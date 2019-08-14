@@ -290,8 +290,10 @@ func (tr *Transport) Handle(method, url string, fn HandlerFunc, options ...kit_h
 func (tr *Transport) Open() error {
 	tr.Handler = tr.mux
 
-	if hn := tr.metricer.Handler(); hn != nil {
-		tr.mux.Handler(net_http.MethodGet, "/metrics", hn)
+	if tr.metricer != nil {
+		if hn := tr.metricer.Handler(); hn != nil {
+			tr.mux.Handler(net_http.MethodGet, "/metrics", hn)
+		}
 	}
 
 	for _, mon := range tr.monitors {
@@ -320,7 +322,7 @@ func (tr *Transport) Close() error {
 func NewTransport(
 	host, port string,
 	options ...TransportOption,
-) *Transport {
+) (*Transport, error) {
 	transport := &Transport{
 		Server:       &net_http.Server{Addr: host + ":" + port},
 		options:      []kit_http.ServerOption{},
@@ -333,5 +335,10 @@ func NewTransport(
 		o(transport)
 	}
 
-	return transport
+	transport.options = append(
+		transport.options,
+		kit_http.ServerErrorEncoder(transport.errorEncoder),
+	)
+
+	return transport, nil
 }

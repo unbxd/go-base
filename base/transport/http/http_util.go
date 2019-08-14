@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -164,5 +165,29 @@ func copyHeader(dst, src net_http.Header) {
 		for _, v := range vv {
 			dst.Add(k, v)
 		}
+	}
+}
+
+type readcloser struct{ io.Reader }
+
+func (rc *readcloser) Close() error { /*do nothing */ return nil }
+
+// NewByteResponse returns net_http.Response generated from bytes returned
+func NewByteResponse(req *net_http.Request, bt []byte) *net_http.Response {
+	return &net_http.Response{
+		Status:     net_http.StatusText(net_http.StatusOK),
+		StatusCode: net_http.StatusOK,
+		Body:       &readcloser{bytes.NewReader(bt)},
+		Request:    req,
+	}
+}
+
+// NewReaderResponse returns the Response generated from bytes returned
+func NewReaderResponse(req *net_http.Request, reader io.Reader) *net_http.Response {
+	return &net_http.Response{
+		Status:     net_http.StatusText(net_http.StatusOK),
+		StatusCode: net_http.StatusOK,
+		Body:       &readcloser{reader},
+		Request:    req,
 	}
 }

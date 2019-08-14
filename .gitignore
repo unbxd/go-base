@@ -53,3 +53,5 @@ package-lock.json
 
 # util files 
 .env
+
+*.bin
