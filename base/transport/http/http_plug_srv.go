@@ -111,17 +111,14 @@ func NewHistogramInstrumentation(
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, req interface{}) (res interface{}, err error) {
 			defer func(start time.Time) {
-
 				if fn != nil {
 					tags = append(
 						tags, fn(req, res)...,
 					)
 				}
-
 				tags = append(
 					tags, []string{"error", fmt.Sprint(err != nil)}...,
 				)
-
 				histogram.With(tags...).Observe(time.Since(start).Seconds())
 			}(time.Now())
 
@@ -146,11 +143,9 @@ func NewCounterInstrumentation(
 						tags, fn(req, res)...,
 					)
 				}
-
 				tags = append(
 					tags, []string{"error", fmt.Sprint(err != nil)}...,
 				)
-
 				counter.With(tags...).Add(incr)
 			}(time.Now())
 

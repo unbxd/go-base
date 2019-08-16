@@ -286,6 +286,9 @@ func (tr *Transport) Handle(method, url string, fn HandlerFunc, options ...kit_h
 	tr.mux.Handler(method, url, encapsulate(fn, tr.options, options))
 }
 
+// ServerOptions returns the default server options associated with Transport
+func (tr *Transport) ServerOptions() []kit_http.ServerOption { return tr.options }
+
 // Open starts the Transport
 func (tr *Transport) Open() error {
 	tr.Handler = tr.mux
