@@ -23,3 +23,34 @@ type Metricser interface {
 
 	Handler() net_http.Handler
 }
+
+// ContextKey is key for context
+type ContextKey int
+
+// ContextKeys
+const (
+	ContextKeyRequestMethod ContextKey = iota
+	ContextKeyRequestURI
+	ContextKeyRequestPath
+	ContextKeyRequestProto
+	ContextKeyRequestHost
+	ContextKeyRequestRemoteAddr
+	ContextKeyRequestXForwardedFor
+	ContextKeyRequestXForwardedProto
+	ContextKeyRequestAuthorization
+	ContextKeyRequestReferer
+	ContextKeyRequestUserAgent
+	ContextKeyRequestXRequestID
+	ContextKeyRequestAccept
+	ContextKeyResponseHeaders
+	ContextKeyResponseSize
+)
+
+// Headers
+const (
+	HeaderAllowHeaders = "Access-Control-Allow-Headers"
+	HeaderAllowMethods = "Access-Control-Allow-Methods"
+	HeaderAllowOrigin  = "Access-Control-Allow-Origin"
+	HeaderExposeHeader = "Access-Control-Expose-Headers"
+	HeaderAccessMaxAge = "Access-Control-Max-Age"
+)

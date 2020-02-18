@@ -64,6 +64,7 @@ func main() {
 		clog.Fatal("Error init logging", err)
 	}
 
+	// Transport Defines the Network Level Transport Definition
 	tr, err := http.NewTransport(
 		"0.0.0.0",
 		"4444",
@@ -83,7 +84,10 @@ func main() {
 		ctx context.Context,
 		req *net_http.Request,
 	) (res *net_http.Response, err error) {
-		return http.NewByteResponse(req, []byte("hello-world")), err
+		return http.NewResponse(
+			req,
+			http.ResponseWithBytes([]byte("hello-world")),
+		), err
 	})
 
 	/*

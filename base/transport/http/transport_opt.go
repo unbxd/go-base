@@ -21,26 +21,31 @@ func WithLogger(logger log.Logger) TransportOption {
 	}
 }
 
-// WithFullDefaults sets default []kit_http.ServerOption, used
+// WithFullDefaults sets default ServerOption, used
 // by every request handler
+// It sets following filters for the request
+// 	- RequestID
+//	- CORS
+// 	- DefaultErrorHandler
+//	- DefaultTranceLogger (using transport.Logger)
 func WithFullDefaults() TransportOption {
 	return func(tr *Transport) {
-		for _, opt := range []kit_http.ServerOption{
-			NewRequestIDRequestFunc("Go-Base-Request-ID"),
-			NewPopulateRequestContextRequestFunc(),
-			NewCORSResponseFunc(),
-			NewDefaultErrorEncoder(),
-			NewTraceLoggerFinalizer(tr.logger),
+		for _, opt := range []HandlerOption{
+			NewRequestIDHandlerOption("Go-Base-Request-ID"),
+			NewCORSHandlerOption(),
+			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
+			NewTraceLoggerFinalizerHandlerOption(tr.logger),
 		} {
 			tr.options = append(tr.options, opt)
 		}
 	}
 }
 
-// WithOptionsOverride overrides the default []kit_http.ServerOption
-// and replaces it with options provided
-func WithOptionsOverride(options ...kit_http.ServerOption) TransportOption {
-	return func(tr *Transport) { tr.options = options }
+// WithHandlerOption overrides the default HandlerOption for the transport
+func WithHandlerOption(options ...HandlerOption) TransportOption {
+	return func(tr *Transport) {
+		tr.options = append(tr.options, options...)
+	}
 }
 
 // WithMetricser supports adding metricer to Transport
@@ -48,17 +53,19 @@ func WithMetricser(metricer Metricser) TransportOption {
 	return func(tr *Transport) { tr.metricer = metricer }
 }
 
-// WithOptionsAppend appends the provided kit_http.ServerOption(s)
-// to existing ServerOption of transport
-func WithOptionsAppend(options ...kit_http.ServerOption) TransportOption {
-	return func(tr *Transport) { tr.options = append(tr.options, options...) }
-}
-
-// WithErrorEncoder lets us put a custom error encoder for the Transport
+// WithTransportErrorEncoder lets us put a custom error encoder for the Transport
+// applicable at Transport level. There is a provision to do this per handler
+// using NewErrorEncoder, however if a handler doesn't have an error encoder
+// this will be used as default
 // If any Handler doesn't have an error encoder defined when throwing an error
 // this error encoder is used
-func WithErrorEncoder(errorEncoder kit_http.ErrorEncoder) TransportOption {
-	return func(tr *Transport) { tr.errorEncoder = errorEncoder }
+func WithTransportErrorEncoder(fn ErrorEncoder) TransportOption {
+	return func(tr *Transport) {
+		tr.options = append(
+			tr.options,
+			NewErrorEncoderHandlerOptions(fn),
+		)
+	}
 }
 
 // WithTimeout sets the custom net_http.Server timeout for the Transport

@@ -3,6 +3,7 @@ module github.com/unbxd/go-base
 go 1.12
 
 require (
+	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/dimfeld/httptreemux v5.0.1+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/nats-io/nats.go v1.8.1

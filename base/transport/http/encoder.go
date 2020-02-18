@@ -1,13 +1,14 @@
 package http
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	net_http "net/http"
 	"sync"
 	"time"
+
+	"github.com/oxtoacart/bpool"
 )
 
 // A pool is an interface for getting and returning temporary
@@ -168,26 +169,34 @@ func copyHeader(dst, src net_http.Header) {
 	}
 }
 
-type readcloser struct{ io.Reader }
+func newDefaultEncoder() Encoder {
+	bufferPool := bpool.NewBytePool(100, 1000000)
+	return func(ctx context.Context, rw net_http.ResponseWriter, res interface{}) (err error) {
+		rr, ok := res.(*net_http.Response)
+		if !ok {
+			return ErrNotHTTPResponse
+		}
 
-func (rc *readcloser) Close() error { /*do nothing */ return nil }
+		if res == nil {
+			rw.WriteHeader(net_http.StatusNoContent)
+			return
+		}
 
-// NewByteResponse returns net_http.Response generated from bytes returned
-func NewByteResponse(req *net_http.Request, bt []byte) *net_http.Response {
-	return &net_http.Response{
-		Status:     net_http.StatusText(net_http.StatusOK),
-		StatusCode: net_http.StatusOK,
-		Body:       &readcloser{bytes.NewReader(bt)},
-		Request:    req,
+		copyHeader(rw.Header(), rr.Header)
+
+		switch {
+		case rr.StatusCode == 0:
+			rw.WriteHeader(net_http.StatusOK)
+		case rr.StatusCode > 0:
+			rw.WriteHeader(rr.StatusCode)
+		default:
+			panic("status code should be non-negative")
+		}
+
+		return copyResponse(bufferPool, rw, rr.Body, flushInterval(rr))
 	}
 }
 
-// NewReaderResponse returns the Response generated from bytes returned
-func NewReaderResponse(req *net_http.Request, reader io.Reader) *net_http.Response {
-	return &net_http.Response{
-		Status:     net_http.StatusText(net_http.StatusOK),
-		StatusCode: net_http.StatusOK,
-		Body:       &readcloser{reader},
-		Request:    req,
-	}
-}
+// Encoder denotes the Encoder used to write the data on stream
+// after reading the interface
+type Encoder func(context.Context, net_http.ResponseWriter, interface{}) error
