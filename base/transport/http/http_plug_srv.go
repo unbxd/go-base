@@ -9,14 +9,13 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	// kit_log "github.com/go-kit/kit/log"
 	"net/http"
 	net_http "net/http"
 
 	"github.com/go-kit/kit/metrics"
 	kit_http "github.com/go-kit/kit/transport/http"
 	uuid "github.com/satori/go.uuid"
-	"github.com/uknth/go-base/base/log"
+	"github.com/unbxd/go-base/base/log"
 )
 
 // ContextKey is key for context

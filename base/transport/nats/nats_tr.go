@@ -9,7 +9,7 @@ import (
 	kitn "github.com/go-kit/kit/transport/nats"
 	nats "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"github.com/uknth/go-base/base/log"
+	"github.com/unbxd/go-base/base/log"
 )
 
 // TransportOption is optional parameters for NATS Transport

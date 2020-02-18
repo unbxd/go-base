@@ -9,7 +9,7 @@ import (
 
 	tmux "github.com/dimfeld/httptreemux"
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/uknth/go-base/base/log"
+	"github.com/unbxd/go-base/base/log"
 )
 
 // TransportOption sets options parameters to Transport
