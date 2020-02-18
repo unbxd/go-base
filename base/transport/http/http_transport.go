@@ -12,106 +12,43 @@ import (
 	"github.com/unbxd/go-base/base/log"
 )
 
-// TransportOption sets options parameters to Transport
-type TransportOption func(*Transport)
+type (
+	// TransportOption sets options parameters to Transport
+	TransportOption func(*Transport)
 
-// WithMux sets the multiplexer for transport
-func WithMux(mux Mux) TransportOption {
-	return func(tr *Transport) {
-		tr.mux = mux
+	// HandlerOption is set of options supported by the Transport
+	// per Handler
+	HandlerOption kit_http.ServerOption
+
+	// Transport is a wrapper around net_http.Server with sane defaults
+	// dimfeld/httptreemux is used as default multiplexer and Go-Kit's
+	// http transport is used as default request handler
+	Transport struct {
+		*net_http.Server
+
+		// default ServerOptions
+		options []kit_http.ServerOption
+
+		mux          Mux
+		logger       log.Logger
+		monitors     []string
+		metricer     Metricser
+		errorEncoder kit_http.ErrorEncoder
 	}
-}
-
-// WithLogger sets custom logger for Transport
-func WithLogger(logger log.Logger) TransportOption {
-	return func(tr *Transport) {
-		tr.logger = logger
-	}
-}
-
-// WithFullDefaults sets default []kit_http.ServerOption, used
-// by every request handler
-func WithFullDefaults() TransportOption {
-	return func(tr *Transport) {
-		for _, opt := range []kit_http.ServerOption{
-			NewRequestIDRequestFunc("Go-Base-Request-ID"),
-			NewPopulateRequestContextRequestFunc(),
-			NewCORSResponseFunc(),
-			NewDefaultErrorEncoder(),
-			NewTraceLoggerFinalizer(tr.logger),
-		} {
-			tr.options = append(tr.options, opt)
-		}
-	}
-}
-
-// WithOptionsOverride overrides the default []kit_http.ServerOption
-// and replaces it with options provided
-func WithOptionsOverride(options ...kit_http.ServerOption) TransportOption {
-	return func(tr *Transport) { tr.options = options }
-}
-
-// WithMetricser supports adding metricer to Transport
-func WithMetricser(metricer Metricser) TransportOption {
-	return func(tr *Transport) { tr.metricer = metricer }
-}
-
-// WithOptionsAppend appends the provided kit_http.ServerOption(s)
-// to existing ServerOption of transport
-func WithOptionsAppend(options ...kit_http.ServerOption) TransportOption {
-	return func(tr *Transport) { tr.options = append(tr.options, options...) }
-}
-
-// WithErrorEncoder lets us put a custom error encoder for the Transport
-// If any Handler doesn't have an error encoder defined when throwing an error
-// this error encoder is used
-func WithErrorEncoder(errorEncoder kit_http.ErrorEncoder) TransportOption {
-	return func(tr *Transport) { tr.errorEncoder = errorEncoder }
-}
-
-// WithTimeout sets the custom net_http.Server timeout for the Transport
-func WithTimeout(idle, write, read time.Duration) TransportOption {
-	return func(tr *Transport) {
-		tr.IdleTimeout = idle
-		tr.WriteTimeout = write
-		tr.ReadTimeout = read
-	}
-}
-
-// WithMonitors appends to a default list of monitor endpoint supported by Transport
-func WithMonitors(monitors []string) TransportOption {
-	return func(tr *Transport) {
-		tr.monitors = append(tr.monitors, monitors...)
-	}
-}
-
-// Transport is a wrapper around net_http.Server with sane defaults
-// dimfeld/httptreemux is used as default multiplexer and Go-Kit's
-// http transport is used as default request handler
-type Transport struct {
-	*net_http.Server
-
-	// default ServerOptions
-	options []kit_http.ServerOption
-
-	mux          Mux
-	logger       log.Logger
-	monitors     []string
-	metricer     Metricser
-	errorEncoder kit_http.ErrorEncoder
-}
+)
 
 func (tr *Transport) wrap(options []kit_http.ServerOption) []kit_http.ServerOption {
 	return append(tr.options, options...)
 }
 
 // Get handles GET request
-func (tr *Transport) Get(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Get(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodGet, url, encapsulate(fn, tr.options, options))
 }
 
-// GetE handles GET request for custom definition of handler
-func (tr *Transport) GetE(
+// KitGET handles GET request for custom definition of handler.
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitGET(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -128,12 +65,13 @@ func (tr *Transport) GetE(
 }
 
 // Put handles PUT request
-func (tr *Transport) Put(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Put(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodPut, url, encapsulate(fn, tr.options, options))
 }
 
-// PutE handles PUT request for custom definition of handler
-func (tr *Transport) PutE(
+// KitPUT handles PUT request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitPUT(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -150,12 +88,13 @@ func (tr *Transport) PutE(
 }
 
 // Post handles POST request
-func (tr *Transport) Post(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Post(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodPost, url, encapsulate(fn, tr.options, options))
 }
 
-// PostE handles POST request for custom definition of handler
-func (tr *Transport) PostE(
+// KitPOST handles POST request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitPOST(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -172,12 +111,13 @@ func (tr *Transport) PostE(
 }
 
 // Delete handles DELETE request
-func (tr *Transport) Delete(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Delete(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodDelete, url, encapsulate(fn, tr.options, options))
 }
 
-// DeleteE handles DELETE request for custom definition of handler
-func (tr *Transport) DeleteE(
+// KitDELETE handles DELETE request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitDELETE(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -194,12 +134,13 @@ func (tr *Transport) DeleteE(
 }
 
 // Patch handles PATCH request
-func (tr *Transport) Patch(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Patch(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodPatch, url, encapsulate(fn, tr.options, options))
 }
 
-// PatchE handles PATCH request for custom definition of handler
-func (tr *Transport) PatchE(
+// KitPATCH handles PATCH request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitPATCH(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -216,12 +157,13 @@ func (tr *Transport) PatchE(
 }
 
 // Options handles OPTIONS request
-func (tr *Transport) Options(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Options(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodOptions, url, encapsulate(fn, tr.options, options))
 }
 
-// OptionsE handles OPTIONS request for custom definition of handler
-func (tr *Transport) OptionsE(
+// KitOPTION handles OPTIONS request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitOPTION(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -238,12 +180,13 @@ func (tr *Transport) OptionsE(
 }
 
 // Head handles HEAD request
-func (tr *Transport) Head(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Head(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodHead, url, encapsulate(fn, tr.options, options))
 }
 
-// HeadE handles HEAD request for custom definition of handler
-func (tr *Transport) HeadE(
+// KitHEAD handles HEAD request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitHEAD(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -260,12 +203,13 @@ func (tr *Transport) HeadE(
 }
 
 // Trace handles TRACE request
-func (tr *Transport) Trace(url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Trace(url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(net_http.MethodTrace, url, encapsulate(fn, tr.options, options))
 }
 
-// TraceE handles TRACE request for custom definition of handler
-func (tr *Transport) TraceE(
+// KitTRACE handles TRACE request for custom definition of handler
+// It exposes custom APIs defined as part of Go-Kit.
+func (tr *Transport) KitTRACE(
 	url string,
 	decoder kit_http.DecodeRequestFunc,
 	endpoint endpoint.Endpoint,
@@ -282,7 +226,7 @@ func (tr *Transport) TraceE(
 }
 
 // Handle is generic method to allow custom bindings of URL with a method and it's handler
-func (tr *Transport) Handle(method, url string, fn HandlerFunc, options ...kit_http.ServerOption) {
+func (tr *Transport) Handle(method, url string, fn HandlerFunc, options ...HandlerOption) {
 	tr.mux.Handler(method, url, encapsulate(fn, tr.options, options))
 }
 

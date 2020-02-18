@@ -1,12 +1,14 @@
 package http
 
 import (
-	kit_http "github.com/go-kit/kit/transport/http"
 	net_http "net/http"
+
+	kit_http "github.com/go-kit/kit/transport/http"
 
 	"github.com/go-kit/kit/endpoint"
 
 	"context"
+
 	"github.com/oxtoacart/bpool"
 )
 
@@ -69,12 +71,18 @@ func newDefaultEncoder() kit_http.EncodeResponseFunc {
 func encapsulate(
 	fn HandlerFunc,
 	defaultopts []kit_http.ServerOption,
-	handleropts []kit_http.ServerOption,
+	handleropts []HandlerOption,
 ) net_http.Handler {
+	options := defaultopts
+
+	for _, ho := range handleropts {
+		options = append(options, kit_http.ServerOption(ho))
+	}
+
 	return kit_http.NewServer(
 		Endpoint(fn),
 		newDefaultDecoder(),
 		newDefaultEncoder(),
-		append(defaultopts, handleropts...)...,
+		options...,
 	)
 }
