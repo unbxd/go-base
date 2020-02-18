@@ -197,6 +197,9 @@ func newDefaultEncoder() Encoder {
 	}
 }
 
+// NewDefaultEncoder returns a default Encoder used by http
+func NewDefaultEncoder() Encoder { return newDefaultEncoder() }
+
 // Encoder denotes the Encoder used to write the data on stream
 // after reading the interface
 type Encoder func(context.Context, net_http.ResponseWriter, interface{}) error
