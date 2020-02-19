@@ -5,7 +5,7 @@ import (
 	net_http "net/http"
 	"time"
 
-	tmux "github.com/dimfeld/httptreemux"
+	"github.com/julienschmidt/httprouter"
 	"github.com/unbxd/go-base/base/log"
 )
 
@@ -273,7 +273,7 @@ func NewTransport(
 		options: []HandlerOption{
 			NewPopulateRequestContextRequestFunc(),
 		},
-		mux:      tmux.NewContextMux(),
+		mux:      httprouter.New(),
 		monitors: []string{"/ping"},
 	}
 

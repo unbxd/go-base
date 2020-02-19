@@ -201,13 +201,27 @@ func main() {
 	// 	- use http.WithErrorEncoder() to bind Error Encoders
 	// To Have custom Error Encoder, use the ServerOption that can be
 	// passed using `transport.Get(url, fn, [...ServerOption])` <- these Server Options
-
 	tr.Get("/error", func(
 		ctx context.Context,
 		req *net_http.Request,
 	) (res *net_http.Response, err error) {
 		num := rand.Intn(4)
 		return nil, errs[num]
+	})
+
+	// Another Example is of using URL parameters
+	tr.Get("/ping/:name", func(
+		ctx context.Context,
+		req *net_http.Request,
+	) (*net_http.Response, error) {
+		params := http.Parameters(req)
+
+		return http.NewResponse(
+			req,
+			http.ResponseWithBytes(
+				[]byte(params.ByName("name")),
+			),
+		), nil
 	})
 
 	// To start any transport run the transport with Open() method.
