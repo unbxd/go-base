@@ -60,6 +60,15 @@ func main() {
 		http.WithFullDefaults(),
 		http.WithErrorEncoder(errEncoder),
 	)
+	//
+	//
+	// NOTE: An application can only have one single http.Transport
+	//       This is because the httprouter cannot handle the same
+	//       route in two different transport.
+	//       However, if you have two completely different set of
+	//       routes, it should be fine.
+	//
+	//
 	// This above steps, creates a transport which supports
 	// - some monitor endpoints, which are basically just simple `ping`
 	// - with transport level logging with a custom logger
