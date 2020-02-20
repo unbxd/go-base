@@ -1,6 +1,9 @@
 package metrics
 
 import (
+	net_http "net/http"
+
+	"github.com/go-kit/kit/metrics"
 	kit_metrics "github.com/go-kit/kit/metrics"
 )
 
@@ -20,12 +23,15 @@ type (
 		kit_metrics.Histogram
 	}
 
-	// Metrics is wrapper for supported metrics interface
+	// Handler interface exposes metrics which support handler
+	Handler interface {
+		Handler() net_http.Handler
+	}
+
+	// Metrics standarizes the metrics interface used by the applications
 	Metrics interface {
-		NewCounter(name string, sampleRate float64) Counter
-
-		NewGauge(name string) Gauge
-
-		NewHistogram(name string, sampleRate float64) Histogram
+		NewCounter(prefix, name string) metrics.Counter
+		NewHistogram(prefix, name string) metrics.Histogram
+		NewGauge(prefix, name string) metrics.Gauge
 	}
 )
