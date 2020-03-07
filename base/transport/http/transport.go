@@ -49,7 +49,7 @@ func (tr *Transport) GET(
 	tr.mux.Handler(
 		net_http.MethodGet,
 		uri,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -73,7 +73,7 @@ func (tr *Transport) PUT(
 	tr.mux.Handler(
 		net_http.MethodPut,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -97,7 +97,7 @@ func (tr *Transport) POST(
 	tr.mux.Handler(
 		net_http.MethodPost,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -121,7 +121,7 @@ func (tr *Transport) DELETE(
 	tr.mux.Handler(
 		net_http.MethodDelete,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -145,7 +145,7 @@ func (tr *Transport) PATCH(
 	tr.mux.Handler(
 		net_http.MethodPatch,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -169,7 +169,7 @@ func (tr *Transport) OPTION(
 	tr.mux.Handler(
 		net_http.MethodOptions,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -193,7 +193,7 @@ func (tr *Transport) HEAD(
 	tr.mux.Handler(
 		net_http.MethodHead,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -217,7 +217,7 @@ func (tr *Transport) TRACE(
 	tr.mux.Handler(
 		net_http.MethodTrace,
 		url,
-		newHandler(fn, options...),
+		newHandler(fn, append(tr.options, options...)...),
 	)
 }
 
@@ -228,7 +228,10 @@ func (tr *Transport) Handle(method, url string, fn HandlerFunc, options ...Handl
 
 // HANDLE gives a generic method agnostic way of binding handler to the request
 func (tr *Transport) HANDLE(met, url string, fn Handler, options ...HandlerOption) {
-	tr.mux.Handler(met, url, newHandler(fn, options...))
+	tr.mux.Handler(
+		met, url,
+		newHandler(fn, append(tr.options, options...)...),
+	)
 }
 
 // Open starts the Transport

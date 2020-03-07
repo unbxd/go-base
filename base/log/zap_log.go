@@ -1,13 +1,17 @@
 package log
 
 import (
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-type zapLogger struct {
-	zapLogger *zap.Logger
-}
+type (
+	ZapLoggerOption func(*zapLogger)
+
+	zapLogger struct {
+		config    *zap.Config
+		zapLogger *zap.Logger
+	}
+)
 
 func (zl *zapLogger) convert(fields ...Field) []zap.Field {
 	var zfields []zap.Field
@@ -38,6 +42,10 @@ func (zl *zapLogger) convert(fields ...Field) []zap.Field {
 
 func (zl *zapLogger) Info(msg string, fields ...Field) {
 	zl.zapLogger.Info(msg, zl.convert(fields...)...)
+}
+
+func (zl *zapLogger) Debug(msg string, fields ...Field) {
+	zl.zapLogger.Debug(msg, zl.convert(fields...)...)
 }
 
 func (zl *zapLogger) Warn(msg string, fields ...Field) {
@@ -85,22 +93,66 @@ func zapLevel(level string) zap.AtomicLevel {
 	}
 }
 
+var (
+	defaultLevel    = zap.NewAtomicLevelAt(zap.ErrorLevel)
+	defaultOutputs  = []string{"stdout"}
+	defaultEncoding = "json"
+)
+
+// ZapWithLevel is option to set level for Zap Based Logger
+func ZapWithLevel(level string) ZapLoggerOption {
+	return func(zl *zapLogger) {
+		zl.config.Level = zapLevel(level)
+	}
+}
+
+//ZapWithEncoding is option to set encoding for zap based logger
+func ZapWithEncoding(encoding string) ZapLoggerOption {
+	return func(zl *zapLogger) {
+		zl.config.Encoding = encoding
+	}
+}
+
+// ZapWithOutput is option to set output paths for zap based logger
+func ZapWithOutput(outputs []string) ZapLoggerOption {
+	return func(zl *zapLogger) {
+		zl.config.OutputPaths = outputs
+	}
+}
+
+// ZapWithAppendedOutput is option to add additional output to list of
+// existing output destination
+func ZapWithAppendedOutput(outputs []string) ZapLoggerOption {
+	return func(zl *zapLogger) {
+		zl.config.OutputPaths = append(
+			zl.config.OutputPaths, outputs...,
+		)
+	}
+}
+
 // NewZapLogger returns a default implementaiton of log.Logger interface
 // using uber/zap as core layer
 func NewZapLogger(
-	level string,
-	encoding string,
-	output []string,
+	options ...ZapLoggerOption,
 ) (Logger, error) {
 	config := zap.NewProductionConfig()
 
-	config.Level = zapLevel(level)
-	config.OutputPaths = output
-	config.Encoding = encoding
+	config.Level = defaultLevel
+	config.OutputPaths = defaultOutputs
+	config.Encoding = defaultEncoding
 
-	zl, err := config.Build()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to build zap logger")
+	zl := &zapLogger{config: &config}
+
+	for _, opt := range options {
+		opt(zl)
 	}
-	return &zapLogger{zl}, err
+
+	// build the logger
+	logger, err := zl.config.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	zl.zapLogger = logger
+	return zl, nil
 }

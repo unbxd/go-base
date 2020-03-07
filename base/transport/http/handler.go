@@ -41,25 +41,33 @@ type (
 	HandlerOption func(*handler)
 )
 
-// handlerWithEncoder returns a request handler with customer encoder function
+// HandlerWithEncoder returns a request handler with customer encoder function
 func HandlerWithEncoder(fn Encoder) HandlerOption {
 	return func(h *handler) { h.encoder = fn }
 }
 
-// handlerWithDecoder returns a request handler with a customer decoer function
+// HandlerWithDecoder returns a request handler with a customer decoer function
 func HandlerWithDecoder(fn Decoder) HandlerOption {
 	return func(h *handler) { h.decoder = fn }
 }
 
-// handlerWithErrorEncoder returns a request handler with a customer error
+// HandlerWithErrorEncoder returns a request handler with a customer error
 // encoder function
 func HandlerWithErrorEncoder(fn ErrorEncoder) HandlerOption {
-	return func(h *handler) { h.errorEncoder = fn }
+	return func(h *handler) {
+		h.errorEncoder = fn
+		h.options = append(h.options, kit_http.ServerErrorEncoder(
+			kit_http.ErrorEncoder(fn),
+		))
+	}
 }
 
-// handlerWithErrorhandler returns a request handler with a custom error handler
+// HandlerWithErrorhandler returns a request handler with a custom error handler
 func HandlerWithErrorhandler(fn ErrorHandler) HandlerOption {
-	return func(h *handler) { h.errorhandler = fn }
+	return func(h *handler) {
+		h.errorhandler = fn
+		h.options = append(h.options, kit_http.ServerErrorHandler(fn))
+	}
 }
 
 // newhandler returns a new handler

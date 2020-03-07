@@ -27,9 +27,8 @@ func main() {
 	// Logging is provided as direct implementation of
 	// log.Logger interface.
 	logger, err := log.NewZapLogger(
-		"debug",
-		"console",
-		[]string{"stdout"},
+		log.ZapWithLevel("debug"),
+		log.ZapWithEncoding("console"),
 	)
 	if err != nil {
 		// throw error in console log

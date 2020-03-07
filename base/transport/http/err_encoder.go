@@ -33,3 +33,11 @@ func NewErrorEncoderHandlerOptions(fn ErrorEncoder) HandlerOption {
 		)
 	}
 }
+
+// NewGoKitErrorEncoderHandlerOption provides an option to set
+// error encoder for handler or transport based on Go-Kit's ErrorEncoder
+func NewGoKitErrorEncoderHandlerOption(fn kit_http.ErrorEncoder) HandlerOption {
+	return func(h *handler) {
+		h.errorEncoder = ErrorEncoder(fn)
+	}
+}

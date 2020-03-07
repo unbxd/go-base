@@ -8,8 +8,13 @@ import (
 	"sync"
 	"time"
 
+	kit_http "github.com/go-kit/kit/transport/http"
 	"github.com/oxtoacart/bpool"
 )
+
+// Encoder denotes the Encoder used to write the data on stream
+// after reading the interface
+type Encoder func(context.Context, net_http.ResponseWriter, interface{}) error
 
 // A pool is an interface for getting and returning temporary
 // byte slices for use by io.CopyBuffer.
@@ -200,6 +205,12 @@ func newDefaultEncoder() Encoder {
 // NewDefaultEncoder returns a default Encoder used by http
 func NewDefaultEncoder() Encoder { return newDefaultEncoder() }
 
-// Encoder denotes the Encoder used to write the data on stream
-// after reading the interface
-type Encoder func(context.Context, net_http.ResponseWriter, interface{}) error
+// NewDefaultJSONEncoder encodes the response in JSON
+func NewDefaultJSONEncoder() Encoder { return Encoder(kit_http.EncodeJSONResponse) }
+
+// NewGoKitEncoderHandlerOption provides option to encode the request
+func NewGoKitEncoderHandlerOption(fn kit_http.EncodeResponseFunc) HandlerOption {
+	return func(h *handler) {
+		h.encoder = Encoder(fn)
+	}
+}

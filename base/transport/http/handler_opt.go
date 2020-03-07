@@ -180,6 +180,7 @@ func NewDeleteHeaderHandlerOption(headers ...string) HandlerOption {
 		))
 	}
 }
+
 func populateRequestContext(ctx context.Context, r *http.Request) context.Context {
 	for k, v := range map[ContextKey]string{
 		ContextKeyRequestMethod:          r.Method,

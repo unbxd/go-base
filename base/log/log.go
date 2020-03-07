@@ -89,6 +89,8 @@ type Logger interface {
 
 	Fatal(string, ...Field)
 
+	Debug(string, ...Field)
+
 	// Flush the logs
 	Flush() error
 
