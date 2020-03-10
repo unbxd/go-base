@@ -62,7 +62,7 @@ func main() {
 	//
 	//
 	// NOTE: An application can only have one single http.Transport
-	//       This is because the httprouter cannot handle the same
+	//       This is because the httpMux cannot handle the same
 	//       route in two different transport.
 	//       However, if you have two completely different set of
 	//       routes, it should be fine.

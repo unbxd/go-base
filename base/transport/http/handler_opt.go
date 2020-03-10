@@ -65,6 +65,7 @@ func NewRequestIDHandlerOption(customHeaders ...string) HandlerOption {
 		}
 
 		r.Header.Set(rid, id)
+		ctx = context.WithValue(ctx, ContextKeyRequestXRequestID, id)
 
 		for _, hr := range customHeaders {
 			r.Header.Set(hr, id)
