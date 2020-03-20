@@ -10,6 +10,11 @@ import (
 	"github.com/unbxd/go-base/base/endpoint"
 )
 
+// Consumer Errors
+var (
+	ErrCreatingConsumer = errors.New("error creating consumer")
+)
+
 type (
 	// ConsumerOption provies set of options to modify a subscriber
 	ConsumerOption func(*Consumer)
@@ -113,6 +118,12 @@ func WithAfterFuncsConsumerOption(fns ...AfterFunc) ConsumerOption {
 	return func(c *Consumer) { c.afters = append(c.afters, fns...) }
 }
 
+// WithEndpointConsumerOption provides a way to set
+// endpoint to the consumer
+func WithEndpointConsumerOption(end endpoint.Endpoint) ConsumerOption {
+	return func(c *Consumer) { c.end = end }
+}
+
 // Open actually handles the subcriber messages
 func (c *Consumer) Open() error {
 	for {
@@ -172,8 +183,8 @@ func (c *Consumer) Open() error {
 	}
 }
 
-// NewKafkaConsumer returns kafka consumer for the given brokers
-func NewKafkaConsumer(
+// NewConsumer returns kafka consumer for the given brokers
+func NewConsumer(
 	brokers []string,
 	options ...ConsumerOption,
 ) (*Consumer, error) {
@@ -193,5 +204,20 @@ func NewKafkaConsumer(
 		o(cs)
 	}
 
+	if cs.end == nil {
+		return nil, errors.Wrap(
+			ErrCreatingConsumer, "missing encoder",
+		)
+	}
+
+	if cs.dec == nil {
+		return nil, errors.Wrap(
+			ErrCreatingConsumer, "missing decoder",
+		)
+	}
+
+	if cs.errFn == nil {
+		cs.errFn = defaultErrorFunc
+	}
 	return cs, nil
 }
