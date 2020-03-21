@@ -23,6 +23,9 @@ type (
 	// Handler is wrapper on top of endpoint.Endpoint
 	Handler endpoint.Endpoint
 
+	// Middleware defines the middleware for request
+	Middleware endpoint.Middleware
+
 	// handler is wrapper on top of kit_http.Server
 	handler struct {
 		*kit_http.Server
@@ -33,6 +36,7 @@ type (
 		decoder      Decoder
 		errorEncoder ErrorEncoder
 		errorhandler ErrorHandler
+		middlewares  []Middleware
 
 		options []kit_http.ServerOption
 	}
@@ -70,6 +74,40 @@ func HandlerWithErrorhandler(fn ErrorHandler) HandlerOption {
 	}
 }
 
+// HandlerWithMiddleware sets middleware for request
+func HandlerWithMiddleware(fn Middleware) HandlerOption {
+	return func(h *handler) {
+		h.middlewares = append(h.middlewares, fn)
+	}
+}
+
+// NoopMiddleware is middleware that does nothing
+// It is returned if a given middleware is not enabled
+func NoopMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
+	return func(
+		ctx context.Context,
+		req interface{},
+	) (interface{}, error) {
+		return next(ctx, req)
+	}
+}
+
+// Wrap wraps around middleware
+func Wrap(hn Handler, mws ...Middleware) Handler {
+	var emws []endpoint.Middleware
+
+	for _, mw := range mws {
+		emws = append(emws, endpoint.Middleware(mw))
+	}
+
+	newmw := endpoint.Chain(
+		NoopMiddleware,
+		emws...,
+	)
+
+	return Handler(newmw(endpoint.Endpoint(hn)))
+}
+
 // newhandler returns a new handler
 func newHandler(fn Handler, options ...HandlerOption) *handler {
 	hn := &handler{
@@ -77,6 +115,7 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 		decoder:      nil,
 		errorEncoder: nil,
 		errorhandler: nil,
+		middlewares:  []Middleware{},
 		options: []kit_http.ServerOption{
 			// default server options here
 			kit_http.ServerBefore(populateRequestContext),
@@ -98,7 +137,9 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 	}
 
 	hn.Server = kit_http.NewServer(
-		kit_endpoint.Endpoint(fn),
+		kit_endpoint.Endpoint(
+			Wrap(fn, hn.middlewares...),
+		),
 		kit_http.DecodeRequestFunc(hn.decoder),
 		kit_http.EncodeResponseFunc(hn.encoder),
 		hn.options...,
