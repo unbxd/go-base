@@ -2,12 +2,14 @@ package kafka
 
 import (
 	"context"
+
 	"time"
 
 	"github.com/go-kit/kit/transport"
 	"github.com/pkg/errors"
 	kafgo "github.com/segmentio/kafka-go"
 	"github.com/unbxd/go-base/base/endpoint"
+	"github.com/unbxd/go-base/base/log"
 )
 
 // Consumer Errors
@@ -124,8 +126,17 @@ func WithEndpointConsumerOption(end endpoint.Endpoint) ConsumerOption {
 	return func(c *Consumer) { c.end = end }
 }
 
+// WithReaderConsumerOption lets you set the reader for kafka
+func WithReaderConsumerOption(reader *kafgo.Reader) ConsumerOption {
+	return func(c *Consumer) { c.reader = reader }
+}
+
 // Open actually handles the subcriber messages
 func (c *Consumer) Open() error {
+	if c.reader == nil {
+		c.reader = kafgo.NewReader(*c.config)
+	}
+
 	for {
 		// start a new context
 		var (
@@ -186,6 +197,7 @@ func (c *Consumer) Open() error {
 // NewConsumer returns kafka consumer for the given brokers
 func NewConsumer(
 	brokers []string,
+	logger log.Logger,
 	options ...ConsumerOption,
 ) (*Consumer, error) {
 	// default values
@@ -196,7 +208,7 @@ func NewConsumer(
 	}
 
 	cs := &Consumer{
-		reader: kafgo.NewReader(cfg),
+		reader: nil,
 		config: &cfg,
 	}
 
@@ -218,6 +230,10 @@ func NewConsumer(
 
 	if cs.errFn == nil {
 		cs.errFn = defaultErrorFunc
+	}
+
+	if cs.errHandler == nil {
+		cs.errHandler = transport.NewLogErrorHandler(logger)
 	}
 	return cs, nil
 }
