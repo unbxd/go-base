@@ -81,6 +81,14 @@ func HandlerWithMiddleware(fn Middleware) HandlerOption {
 	}
 }
 
+// HandlerWithEndpointMiddleware provides an ability to add a
+// middleware of the base type
+func HandlerWithEndpointMiddleware(fn endpoint.Middleware) HandlerOption {
+	return func(h *handler) {
+		h.middlewares = append(h.middlewares, Middleware(fn))
+	}
+}
+
 // NoopMiddleware is middleware that does nothing
 // It is returned if a given middleware is not enabled
 func NoopMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
