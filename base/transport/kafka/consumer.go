@@ -12,11 +12,6 @@ import (
 	"github.com/unbxd/go-base/base/log"
 )
 
-// Consumer Errors
-var (
-	ErrCreatingConsumer = errors.New("error creating consumer")
-)
-
 type (
 	// ConsumerOption provies set of options to modify a subscriber
 	ConsumerOption func(*Consumer)
@@ -24,22 +19,6 @@ type (
 	// Decoder decodes the message recieved on Kafka and converts in
 	// business logic
 	Decoder func(context.Context, kafgo.Message) (interface{}, error)
-
-	// BeforeFunc is executed prior to invoking the endpoint. RequestFunc
-	// may take information from request recieved in the Consumer
-	// and put it in the context.
-	// For instance, if the context needs the information about the topic
-	// or the group-id, that is populated here
-	BeforeFunc func(context.Context, kafgo.Message) context.Context
-
-	// AfterFunc are invoked after executing endpoint
-	AfterFunc func(context.Context, kafgo.Message, interface{}) context.Context
-
-	// ErrorFunc handles the error condition
-	ErrorFunc func(context.Context, kafgo.Message, error)
-
-	// ErrorHandler is wrapper on top of kit.transport.ErrorHandler
-	ErrorHandler interface{ transport.ErrorHandler }
 
 	// Consumer is kafka Consumer
 	Consumer struct {
@@ -218,7 +197,7 @@ func NewConsumer(
 
 	if cs.end == nil {
 		return nil, errors.Wrap(
-			ErrCreatingConsumer, "missing encoder",
+			ErrCreatingConsumer, "missing endpoint",
 		)
 	}
 
