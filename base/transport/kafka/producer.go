@@ -24,7 +24,6 @@ type (
 		writer *kafgo.Writer
 		config *kafgo.WriterConfig
 
-		end endpoint.Endpoint
 		enc Encoder
 
 		befores []BeforeFunc
@@ -148,12 +147,6 @@ func NewProducer(
 	// execute options
 	for _, o := range options {
 		o(pr)
-	}
-
-	if pr.end == nil {
-		return nil, errors.Wrap(
-			ErrCreatingProducer, "endpoint is nil",
-		)
 	}
 
 	if pr.enc == nil {
