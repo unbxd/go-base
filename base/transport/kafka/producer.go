@@ -57,6 +57,29 @@ func WithQueueCapacityProducerOption(qc int) ProducerOption {
 	return func(p *Producer) { p.config.QueueCapacity = qc }
 }
 
+// WithEncoderProducerOption encodes the message passed
+// onto endpoint in desired format
+func WithEncoderProducerOption(fn Encoder) ProducerOption {
+	return func(p *Producer) { p.enc = fn }
+}
+
+// WithBeforesProducerOption sets before functions for the
+// producer, befores are triggered before the message is
+// emitted on kafka
+func WithBeforesProducerOption(fns ...BeforeFunc) ProducerOption {
+	return func(p *Producer) {
+		p.befores = append(p.befores, fns...)
+	}
+}
+
+// WithAfterProducerOption sets the after functions which are executed
+// after the message is published on the kafka
+func WithAfterProducerOption(fns ...AfterFunc) ProducerOption {
+	return func(p *Producer) {
+		p.afters = append(p.afters, fns...)
+	}
+}
+
 // Endpoint returns a usable endpoint
 func (p *Producer) Endpoint() endpoint.Endpoint {
 	return func(
