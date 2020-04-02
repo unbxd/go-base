@@ -80,18 +80,15 @@ type Logger interface {
 
 	// Leveled Logging
 	Info(string, ...Field)
-
 	Warn(string, ...Field)
-
 	Error(string, ...Field)
-
 	Panic(string, ...Field)
-
 	Fatal(string, ...Field)
-
 	Debug(string, ...Field)
 
-	Printf(string, ...interface{})
+	Infof(string, ...interface{})
+	Errorf(string, ...interface{})
+	Debugf(string, ...interface{})
 
 	// Flush the logs
 	Flush() error

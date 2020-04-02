@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-kit/kit/transport"
 	"github.com/pkg/errors"
+	"github.com/segmentio/kafka-go"
 	kafgo "github.com/segmentio/kafka-go"
 	"github.com/unbxd/go-base/base/endpoint"
 	"github.com/unbxd/go-base/base/log"
@@ -184,7 +185,7 @@ func NewConsumer(
 		Brokers: brokers,
 		GroupID: defaultConsumerGroupID,
 		Topic:   defaultTopic,
-		Logger:  logger,
+		Logger:  kafka.LoggerFunc(logger.Debugf),
 	}
 
 	cs := &Consumer{

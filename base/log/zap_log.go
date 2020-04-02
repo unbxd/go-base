@@ -64,6 +64,16 @@ func (zl *zapLogger) Fatal(msg string, fields ...Field) {
 	zl.zapLogger.Fatal(msg, zl.convert(fields...)...)
 }
 
+func (zl *zapLogger) Infof(msg string, vals ...interface{}) {
+	zl.zapLogger.Sugar().Infof(msg, vals...)
+}
+func (zl *zapLogger) Errorf(msg string, vals ...interface{}) {
+	zl.zapLogger.Sugar().Errorf(msg, vals...)
+}
+func (zl *zapLogger) Debugf(msg string, vals ...interface{}) {
+	zl.zapLogger.Sugar().Debugf(msg, vals...)
+}
+
 func (zl *zapLogger) Flush() error {
 	return zl.zapLogger.Sync()
 }
@@ -76,10 +86,6 @@ func (zl *zapLogger) With(fields ...Field) Logger {
 func (zl *zapLogger) Log(kv ...interface{}) error {
 	zl.zapLogger.Sugar().Infow("", kv...)
 	return nil
-}
-
-func (zl *zapLogger) Printf(msg string, vals ...interface{}) {
-	zl.zapLogger.Sugar().Infow(msg, vals...)
 }
 
 func zapLevel(level string) zap.AtomicLevel {
