@@ -112,7 +112,7 @@ func WithReaderConsumerOption(reader *kafgo.Reader) ConsumerOption {
 
 // Open actually handles the subcriber messages
 func (c *Consumer) Open() error {
-	if c.reader != nil {
+	if c.reader == nil {
 		c.reader = kafgo.NewReader(*c.config)
 	}
 
