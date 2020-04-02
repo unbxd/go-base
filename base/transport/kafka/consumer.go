@@ -112,6 +112,10 @@ func WithReaderConsumerOption(reader *kafgo.Reader) ConsumerOption {
 
 // Open actually handles the subcriber messages
 func (c *Consumer) Open() error {
+	if c.reader != nil {
+		c.reader = kafgo.NewReader(*c.config)
+	}
+
 	for {
 		// start a new context
 		var (
@@ -210,7 +214,5 @@ func NewConsumer(
 	if cs.errHandler == nil {
 		cs.errHandler = transport.NewLogErrorHandler(logger)
 	}
-	cs.reader = kafgo.NewReader(*cs.config)
-	cs.reader.SetOffset(-1)
 	return cs, nil
 }
