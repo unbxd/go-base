@@ -211,5 +211,6 @@ func NewConsumer(
 		cs.errHandler = transport.NewLogErrorHandler(logger)
 	}
 	cs.reader = kafgo.NewReader(*cs.config)
+	cs.reader.SetOffset(-1)
 	return cs, nil
 }
