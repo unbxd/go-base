@@ -78,6 +78,10 @@ func (zl *zapLogger) Log(kv ...interface{}) error {
 	return nil
 }
 
+func (zl *zapLogger) Printf(msg string, vals ...interface{}) {
+	zl.zapLogger.Sugar().Infow(msg, vals...)
+}
+
 func zapLevel(level string) zap.AtomicLevel {
 	switch level {
 	case "info":

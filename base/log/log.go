@@ -91,6 +91,8 @@ type Logger interface {
 
 	Debug(string, ...Field)
 
+	Printf(string, ...interface{})
+
 	// Flush the logs
 	Flush() error
 

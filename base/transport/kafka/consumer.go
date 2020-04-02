@@ -184,6 +184,7 @@ func NewConsumer(
 		Brokers: brokers,
 		GroupID: defaultConsumerGroupID,
 		Topic:   defaultTopic,
+		Logger:  logger,
 	}
 
 	cs := &Consumer{
