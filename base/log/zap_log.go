@@ -24,9 +24,15 @@ func (zl *zapLogger) convert(fields ...Field) []zap.Field {
 			}
 			zfields = append(zfields, zap.Bool(fl.Key, bl))
 		case ERROR:
-			zfields = append(zfields, zap.Error(fl.Value.(error)))
+			if fl.Value != nil {
+				zfields = append(zfields, zap.Error(fl.Value.(error)))
+			} else {
+				zfields = append(zfields, zap.Error(nil))
+			}
 		case FLOAT:
-			zfields = append(zfields, zap.Float64(fl.Key, fl.Value.(float64)))
+			if fl.Value != nil {
+				zfields = append(zfields, zap.Float64(fl.Key, fl.Value.(float64)))
+			}
 		case INT:
 			zfields = append(zfields, zap.Int64(fl.Key, fl.Integer))
 		case STRING:
