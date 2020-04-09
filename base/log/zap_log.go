@@ -164,7 +164,9 @@ func NewZapLogger(
 	}
 
 	// build the logger
-	logger, err := zl.config.Build()
+	logger, err := zl.config.Build(
+		zap.AddCallerSkip(1),
+	)
 	if err != nil {
 		return nil, err
 	}
