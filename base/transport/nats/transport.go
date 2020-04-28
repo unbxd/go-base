@@ -81,7 +81,7 @@ func (tr *Transport) Publisher(
 	enc Encoder,
 	options ...PublisherOption,
 ) endpoint.Endpoint {
-	return newPublisher(tr.conn, subject, enc, options...).Endpoint()
+	return newPublisher(tr.conn, subject, enc, options...).endpoint()
 }
 
 // Open starts the Transport
@@ -125,7 +125,7 @@ func (tr *Transport) Close() (err error) {
 }
 
 func (tr *Transport) onClose(_ *natn.Conn) {
-	tr.closeCh <- nil
+	close(tr.closeCh)
 }
 
 // NewTransport returns a new NATS transport
