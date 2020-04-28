@@ -7,5 +7,5 @@ import (
 // NATS Errors
 var (
 	ErrCreatingSubscriber = errors.New("error creating subscriber")
-	ErrCreatingProducer   = errors.New("error creating producer")
+	ErrCreatingPublisher  = errors.New("error creating publisher")
 )
