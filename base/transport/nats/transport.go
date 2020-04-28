@@ -130,16 +130,19 @@ func (tr *Transport) onClose(_ *natn.Conn) {
 
 // NewTransport returns a new NATS transport
 func NewTransport(
+	closeCh chan struct{},
 	options ...TransportOption,
 ) (*Transport, error) {
 
-	tr := Transport{nopts: natn.GetDefaultOptions()}
+	tr := Transport{
+		nopts:   natn.GetDefaultOptions(),
+		closeCh: closeCh,
+	}
 
 	for _, o := range options {
 		o(&tr)
 	}
 
-	tr.closeCh = make(chan struct{})
 	tr.nopts.ClosedCB = tr.onClose
 
 	return &tr, nil
