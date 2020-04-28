@@ -2,7 +2,6 @@ package nats
 
 import (
 	natn "github.com/nats-io/nats.go"
-	"github.com/unbxd/go-base/base/endpoint"
 	"github.com/unbxd/go-base/base/log"
 	"time"
 )
@@ -77,11 +76,10 @@ func (tr *Transport) Subscribe(
 }
 
 func (tr *Transport) Publisher(
-	subject string,
 	enc Encoder,
 	options ...PublisherOption,
-) endpoint.Endpoint {
-	return newPublisher(tr.conn, subject, enc, options...).endpoint()
+) *Publisher {
+	return NewPublisher(tr.conn, options...)
 }
 
 // Open starts the Transport

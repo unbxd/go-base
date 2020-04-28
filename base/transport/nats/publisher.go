@@ -9,31 +9,25 @@ import (
 
 type (
 	// PublisherOption lets you modify properties for publisher
-	PublisherOption func(*publisher)
+	PublisherOption func(*Publisher)
 
 	// Encoder encodes the value passed to it and converts to NATS message
 	Encoder func(context.Context, *natn.Msg, interface{}) error
 
 	// publisher publishes message on NATS
-	publisher struct {
+	Publisher struct {
 		con     *natn.Conn
-		subject string
-		enc     Encoder
 		timeout time.Duration
 	}
 )
 
-// NewPublisher constructs a usable publisher for a single remote method.
-func newPublisher(
+// NewPublisher constructs a usable publisher on the same NATS transport.
+func NewPublisher(
 	con *natn.Conn,
-	subject string,
-	enc Encoder,
 	options ...PublisherOption,
-) *publisher {
-	p := &publisher{
+) *Publisher {
+	p := &Publisher{
 		con:     con,
-		subject: subject,
-		enc:     enc,
 		timeout: 10 * time.Second,
 	}
 	for _, option := range options {
@@ -44,18 +38,18 @@ func newPublisher(
 
 // PublisherTimeout sets the available timeout for NATS request.
 func PublisherTimeout(timeout time.Duration) PublisherOption {
-	return func(p *publisher) { p.timeout = timeout }
+	return func(p *Publisher) { p.timeout = timeout }
 }
 
 // Endpoint returns a usable endpoint that invokes the remote endpoint.
-func (p *publisher) endpoint() endpoint.Endpoint {
+func (p *Publisher) endpoint(subject string, encoder Encoder) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		ctx, cancel := context.WithTimeout(ctx, p.timeout)
 		defer cancel()
 
-		msg := natn.Msg{Subject: p.subject}
+		msg := natn.Msg{Subject: subject}
 
-		if err := p.enc(ctx, &msg, request); err != nil {
+		if err := encoder(ctx, &msg, request); err != nil {
 			return nil, err
 		}
 
