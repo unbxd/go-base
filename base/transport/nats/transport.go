@@ -76,7 +76,6 @@ func (tr *Transport) Subscribe(
 }
 
 func (tr *Transport) Publisher(
-	enc Encoder,
 	options ...PublisherOption,
 ) *Publisher {
 	return NewPublisher(tr.conn, options...)
