@@ -42,7 +42,7 @@ func PublisherTimeout(timeout time.Duration) PublisherOption {
 }
 
 // Endpoint returns a usable endpoint that invokes the remote endpoint.
-func (p *Publisher) endpoint(subject string, encoder Encoder) endpoint.Endpoint {
+func (p *Publisher) Endpoint(subject string, encoder Encoder) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		ctx, cancel := context.WithTimeout(ctx, p.timeout)
 		defer cancel()
