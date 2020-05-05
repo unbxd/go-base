@@ -26,7 +26,7 @@ func PanicRecovery(logger log.Logger) Filter {
 
 					logger.Errorf("panic recovered ", err)
 
-					w.Header().Set("Content-Type", "text/string")
+					w.Header().Set("Content-Type", "text/plain")
 					w.WriteHeader(net_http.StatusInternalServerError)
 					_, err = w.Write([]byte("panic recovered"))
 					if err != nil {
