@@ -22,6 +22,9 @@ type (
 		// default HandlerOption
 		options []HandlerOption
 
+		//server level filter, applicable for all handlers
+		filters []Filter
+
 		mux      Mux
 		logger   log.Logger
 		monitors []string
@@ -234,9 +237,16 @@ func (tr *Transport) HANDLE(met, url string, fn Handler, options ...HandlerOptio
 	)
 }
 
+func TransportWithFilter(f Filter) TransportOption {
+	return func(tr *Transport) {
+		tr.filters = append(
+			tr.filters, f,
+		)
+	}
+}
+
 // Open starts the Transport
 func (tr *Transport) Open() error {
-	tr.Handler = tr.mux
 
 	if tr.metricer != nil {
 		if hn := tr.metricer.Handler(); hn != nil {
@@ -282,6 +292,11 @@ func NewTransport(
 
 	for _, o := range options {
 		o(transport)
+	}
+
+	transport.Handler = transport.mux
+	if transport.filters != nil {
+		transport.Handler = Chain(transport.mux, transport.filters...)
 	}
 
 	return transport, nil
