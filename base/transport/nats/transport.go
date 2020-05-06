@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	natn "github.com/nats-io/nats.go"
-	"github.com/vtomar01/go-base/base/log"
+	"github.com/unbxd/go-base/base/log"
+	"sync"
 	"time"
 )
 
@@ -14,13 +15,15 @@ type (
 
 	// Transport is transport server for natn.IO connection
 	Transport struct {
+		open  bool
+		mu    sync.Mutex
 		flush time.Duration
 
 		conn  *natn.Conn
 		nopts natn.Options
 
 		logger      log.Logger
-		subscribers []subscriber
+		subscribers map[string]*Subscriber
 
 		closeCh chan struct{}
 	}
@@ -72,20 +75,53 @@ func WithLogging(logger log.Logger) TransportOption {
 	}
 }
 
+func (tr *Transport) Subscribers() []*Subscriber {
+	var ss []*Subscriber
+	for _, s := range tr.subscribers {
+		ss = append(ss, s)
+	}
+	return ss
+}
+
 func (tr *Transport) Subscribe(
 	options ...SubscriberOption,
-) error {
-	s, err := newSubscriber(tr.logger, options...)
+) (*Subscriber, error) {
+
+	s, err := newSubscriber(tr.logger, tr.conn, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if tr.open {
+		err := s.open()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tr.subscribers[s.id] = s
+	return s, nil
+}
+
+func (tr *Transport) Unsubscribe(id string) error {
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	s, ok := tr.subscribers[id]
+	if !ok {
+		return nil
+	}
+	err := s.close()
 	if err != nil {
 		return err
 	}
-	tr.subscribers = append(tr.subscribers, *s)
+	delete(tr.subscribers, id)
 	return nil
 }
 
 func (tr *Transport) Publisher(
 	options ...PublisherOption,
-) *Publisher {
+) (*Publisher, error) {
 	return NewPublisher(tr.conn, options...)
 }
 
@@ -93,11 +129,12 @@ func (tr *Transport) Publisher(
 func (tr *Transport) Open() error {
 
 	for _, sub := range tr.subscribers {
-		err := sub.open(tr.conn)
+		err := sub.open()
 		if err != nil {
 			return err
 		}
 	}
+	tr.open = true
 	return nil
 }
 
@@ -156,8 +193,9 @@ func NewTransport(
 ) (*Transport, error) {
 
 	tr := Transport{
-		nopts:   natn.GetDefaultOptions(),
-		closeCh: closeCh,
+		nopts:       natn.GetDefaultOptions(),
+		closeCh:     closeCh,
+		subscribers: make(map[string]*Subscriber),
 	}
 
 	for _, o := range options {

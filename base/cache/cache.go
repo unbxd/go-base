@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/vtomar01/go-base/base/cache/inmem"
+	"github.com/unbxd/go-base/base/cache/inmem"
 	"time"
 )
 

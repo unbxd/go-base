@@ -7,8 +7,8 @@ import (
 	kitn "github.com/go-kit/kit/transport/nats"
 	natn "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"github.com/vtomar01/go-base/base/endpoint"
-	"github.com/vtomar01/go-base/base/log"
+	"github.com/unbxd/go-base/base/endpoint"
+	"github.com/unbxd/go-base/base/log"
 )
 
 type (
@@ -27,10 +27,11 @@ type (
 
 	ErrorHandler interface{ transport.ErrorHandler }
 
-	// subscriber is NATS subscription
-	subscriber struct {
+	// Subscriber is NATS subscription
+	Subscriber struct {
 		*kitn.Subscriber
 
+		id       string
 		subject  string
 		qGroup   string
 		end      endpoint.Endpoint
@@ -40,41 +41,64 @@ type (
 		afters   []AfterFunc
 		errorEnc ErrorEncoder
 		errorhn  ErrorHandler
+		conn     *natn.Conn
 
 		subscription *natn.Subscription
 		options      []kitn.SubscriberOption
 	}
 
-	// SubscriberOption provides set of options to modify a subscriber
-	SubscriberOption func(*subscriber)
+	// SubscriberOption provides set of options to modify a Subscriber
+	SubscriberOption func(*Subscriber)
 )
 
+func (s *Subscriber) Id() string {
+	return s.id
+}
+
+func (s *Subscriber) Topic() string {
+	return s.subject
+}
+
+func (s *Subscriber) Group() string {
+	return s.qGroup
+}
+
+func (s *Subscriber) IsValid() bool {
+	return s.subscription != nil && s.subscription.IsValid()
+}
+
 func WithQGroupSubscriberOption(qGroup string) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.qGroup = qGroup
 	}
 }
 
+func WithId(id string) SubscriberOption {
+	return func(s *Subscriber) {
+		s.id = id
+	}
+}
+
 func WithSubjectSubscriberOption(sub string) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.subject = sub
 	}
 }
 
 func WithEndpointSubscriberOption(end endpoint.Endpoint) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.end = end
 	}
 }
 
 func WithDecoderSubscriberOption(fn Decoder) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.dec = fn
 	}
 }
 
 func WithBeforeFuncsSubscriberOption(fns ...BeforeFunc) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.befores = append(s.befores, fns...)
 		for _, fn := range fns {
 			s.options = append(
@@ -86,7 +110,7 @@ func WithBeforeFuncsSubscriberOption(fns ...BeforeFunc) SubscriberOption {
 }
 
 func WithAfterFuncsSubscriberOption(fns ...AfterFunc) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.afters = append(s.afters, fns...)
 		for _, fn := range fns {
 			s.options = append(
@@ -98,7 +122,7 @@ func WithAfterFuncsSubscriberOption(fns ...AfterFunc) SubscriberOption {
 }
 
 func WithErrorEncoderSubscriberOption(e ErrorEncoder) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.errorEnc = e
 		s.options = append(
 			s.options,
@@ -108,42 +132,42 @@ func WithErrorEncoderSubscriberOption(e ErrorEncoder) SubscriberOption {
 }
 
 func WithErrorhandlerSubscriberOption(e ErrorHandler) SubscriberOption {
-	return func(s *subscriber) {
+	return func(s *Subscriber) {
 		s.errorhn = e
 		s.options = append(s.options, kitn.SubscriberErrorHandler(e))
 	}
 }
 
-func (s *subscriber) open(con *natn.Conn) error {
+func (s *Subscriber) open() error {
 
 	var err error
 	if len(s.qGroup) > 0 {
-		s.subscription, err = con.QueueSubscribe(
+		s.subscription, err = s.conn.QueueSubscribe(
 			s.subject,
 			s.qGroup,
-			s.ServeMsg(con),
+			s.ServeMsg(s.conn),
 		)
-		s.subscription.IsValid()
 	} else {
-		s.subscription, err = con.Subscribe(
+		s.subscription, err = s.conn.Subscribe(
 			s.subject,
-			s.ServeMsg(con),
+			s.ServeMsg(s.conn),
 		)
 	}
 
 	return err
 }
 
-func (s *subscriber) close() error {
+func (s *Subscriber) close() error {
 	return s.subscription.Drain()
 }
 
 func newSubscriber(
 	logger log.Logger,
+	con *natn.Conn,
 	options ...SubscriberOption,
-) (*subscriber, error) {
+) (*Subscriber, error) {
 
-	var s subscriber
+	s := Subscriber{conn: con}
 
 	for _, o := range options {
 		o(&s)
