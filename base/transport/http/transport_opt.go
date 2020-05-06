@@ -4,7 +4,7 @@ import (
 	"time"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/vtomar01/go-base/base/log"
 )
 
 // WithMux sets the multiplexer for transport

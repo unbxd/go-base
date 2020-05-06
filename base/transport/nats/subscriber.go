@@ -7,8 +7,8 @@ import (
 	kitn "github.com/go-kit/kit/transport/nats"
 	natn "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"github.com/unbxd/go-base/base/endpoint"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/vtomar01/go-base/base/endpoint"
+	"github.com/vtomar01/go-base/base/log"
 )
 
 type (
@@ -123,6 +123,7 @@ func (s *subscriber) open(con *natn.Conn) error {
 			s.qGroup,
 			s.ServeMsg(con),
 		)
+		s.subscription.IsValid()
 	} else {
 		s.subscription, err = con.Subscribe(
 			s.subject,

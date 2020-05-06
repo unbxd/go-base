@@ -3,7 +3,7 @@ package nats
 import (
 	"context"
 	natn "github.com/nats-io/nats.go"
-	"github.com/unbxd/go-base/base/endpoint"
+	"github.com/vtomar01/go-base/base/endpoint"
 	"time"
 )
 

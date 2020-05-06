@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
 	kafgo "github.com/segmentio/kafka-go"
-	"github.com/unbxd/go-base/base/endpoint"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/vtomar01/go-base/base/endpoint"
+	"github.com/vtomar01/go-base/base/log"
 )
 
 type (

@@ -10,7 +10,7 @@ import (
 
 	kit_http "github.com/go-kit/kit/transport/http"
 	uuid "github.com/satori/go.uuid"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/vtomar01/go-base/base/log"
 )
 
 // NewTraceLoggerFinalizerHandlerOption returns a HandlerOption for simple trace logging
