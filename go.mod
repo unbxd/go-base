@@ -6,6 +6,8 @@ require (
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.0.2
 	github.com/go-kit/kit v0.9.0
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.2 // indirect
 	github.com/nats-io/nats-server v1.4.1 // indirect

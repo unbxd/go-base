@@ -110,7 +110,7 @@ func main() {
 			ctx context.Context,
 			req *net_http.Request,
 		) (res *net_http.Response, err error) {
-			fmt.Println(req.Header.Values("handlers in order"))
+			fmt.Println(req.Header)
 			return http.NewResponse(
 				req,
 				http.ResponseWithBytes([]byte("hello-world")),
