@@ -28,7 +28,7 @@ type (
 
 	// handler is wrapper on top of kit_http.Server
 	handler struct {
-		*kit_http.Server
+		net_http.Handler
 
 		endpoint endpoint.Endpoint
 
@@ -37,6 +37,9 @@ type (
 		errorEncoder ErrorEncoder
 		errorhandler ErrorHandler
 		middlewares  []Middleware
+
+		//handler level filter
+		filters []Filter
 
 		options []kit_http.ServerOption
 	}
@@ -86,6 +89,13 @@ func HandlerWithMiddleware(fn Middleware) HandlerOption {
 func HandlerWithEndpointMiddleware(fn endpoint.Middleware) HandlerOption {
 	return func(h *handler) {
 		h.middlewares = append(h.middlewares, Middleware(fn))
+	}
+}
+
+// HandlerWithEndpointMiddleware provides an ability to add a
+func HandlerWithFilter(f Filter) HandlerOption {
+	return func(h *handler) {
+		h.filters = append(h.filters, f)
 	}
 }
 
@@ -144,7 +154,8 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 		hn.decoder = newDefaultDecoder()
 	}
 
-	hn.Server = kit_http.NewServer(
+	var handler net_http.Handler
+	handler = kit_http.NewServer(
 		kit_endpoint.Endpoint(
 			Wrap(fn, hn.middlewares...),
 		),
@@ -153,5 +164,10 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 		hn.options...,
 	)
 
+	if hn.filters != nil {
+		handler = Chain(handler, hn.filters...)
+	}
+
+	hn.Handler = handler
 	return hn
 }

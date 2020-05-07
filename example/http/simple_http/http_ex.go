@@ -58,6 +58,19 @@ func main() {
 		http.WithLogger(logger),
 		http.WithFullDefaults(),
 		http.WithErrorEncoder(errEncoder),
+		http.TransportWithFilter(http.PanicRecovery(logger)),
+		http.TransportWithFilter(func(handler net_http.Handler) net_http.Handler {
+			return net_http.HandlerFunc(func(rw net_http.ResponseWriter, r *net_http.Request) {
+				r.Header.Add("handlers in order", "h1")
+				handler.ServeHTTP(rw, r)
+			})
+		}),
+		http.TransportWithFilter(func(handler net_http.Handler) net_http.Handler {
+			return net_http.HandlerFunc(func(rw net_http.ResponseWriter, r *net_http.Request) {
+				r.Header.Add("handlers in order", "h2")
+				handler.ServeHTTP(rw, r)
+			})
+		}),
 	)
 	//
 	//
@@ -92,15 +105,30 @@ func main() {
 	// It is designed to expose only those endpoints which mostly have
 	// network level tasks, and abstraction. A simple example of an API
 	// only using network and returning `hello-world` is defined below
-	tr.Get("/hello-world", func(
-		ctx context.Context,
-		req *net_http.Request,
-	) (res *net_http.Response, err error) {
-		return http.NewResponse(
-			req,
-			http.ResponseWithBytes([]byte("hello-world")),
-		), err
-	})
+	tr.Get("/hello-world",
+		func(
+			ctx context.Context,
+			req *net_http.Request,
+		) (res *net_http.Response, err error) {
+			fmt.Println(req.Header.Values("handlers in order"))
+			return http.NewResponse(
+				req,
+				http.ResponseWithBytes([]byte("hello-world")),
+			), err
+		},
+		http.HandlerWithFilter(func(handler net_http.Handler) net_http.Handler {
+			return net_http.HandlerFunc(func(rw net_http.ResponseWriter, r *net_http.Request) {
+				r.Header.Add("handlers in order", "h3")
+				handler.ServeHTTP(rw, r)
+			})
+		}),
+		http.HandlerWithFilter(func(handler net_http.Handler) net_http.Handler {
+			return net_http.HandlerFunc(func(rw net_http.ResponseWriter, r *net_http.Request) {
+				r.Header.Add("handlers in order", "h4")
+				handler.ServeHTTP(rw, r)
+			})
+		}),
+	)
 
 	// For cases where we need to have objects of business domain, use http.Handler
 	// A typical request handled in an application has three main phases
