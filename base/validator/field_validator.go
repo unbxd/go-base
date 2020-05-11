@@ -3,7 +3,6 @@ package validator
 import (
 	"context"
 	"github.com/go-playground/validator/v10"
-	"github.com/unbxd/go-base/base/endpoint"
 )
 
 type (
@@ -44,8 +43,4 @@ func NewFieldValidator(opts ...FieldValidatorOption) Validator {
 		f.validate.SetTagName(f.tag)
 	}
 	return f
-}
-
-func NewFieldValidatorMw(opts ...FieldValidatorOption) endpoint.Middleware {
-	return MiddleWare(NewFieldValidator(opts...))
 }

@@ -1,11 +1,12 @@
-package validator
+package middleware
 
 import (
 	"context"
 	"github.com/unbxd/go-base/base/endpoint"
+	"github.com/unbxd/go-base/base/validator"
 )
 
-func MiddleWare(v Validator) endpoint.Middleware {
+func ValidatorMw(v validator.Validator) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(cx context.Context, req interface{}) (interface{}, error) {
 			err := v.Validate(cx, req)
