@@ -23,9 +23,16 @@ type (
 		nopts natn.Options
 
 		logger      log.Logger
-		subscribers map[string]*Subscriber
+		subscribers map[string]*subscriber
 
 		closeCh chan struct{}
+	}
+
+	Subscriber interface {
+		Id() string
+		Topic() string
+		Group() string
+		IsValid() bool
 	}
 )
 
@@ -75,8 +82,8 @@ func WithLogging(logger log.Logger) TransportOption {
 	}
 }
 
-func (tr *Transport) Subscribers() []*Subscriber {
-	var ss []*Subscriber
+func (tr *Transport) Subscribers() []Subscriber {
+	var ss []Subscriber
 	for _, s := range tr.subscribers {
 		ss = append(ss, s)
 	}
@@ -85,7 +92,7 @@ func (tr *Transport) Subscribers() []*Subscriber {
 
 func (tr *Transport) Subscribe(
 	options ...SubscriberOption,
-) (*Subscriber, error) {
+) (Subscriber, error) {
 
 	s, err := newSubscriber(tr.logger, tr.conn, options...)
 	if err != nil {
@@ -195,7 +202,7 @@ func NewTransport(
 	tr := Transport{
 		nopts:       natn.GetDefaultOptions(),
 		closeCh:     closeCh,
-		subscribers: make(map[string]*Subscriber),
+		subscribers: make(map[string]*subscriber),
 	}
 
 	for _, o := range options {
