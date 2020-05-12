@@ -43,6 +43,8 @@ type (
 		errorhn  ErrorHandler
 		conn     *natn.Conn
 
+		middlewares []endpoint.Middleware
+
 		subscription *natn.Subscription
 		options      []kitn.SubscriberOption
 	}
@@ -118,6 +120,14 @@ func WithAfterFuncsSubscriberOption(fns ...AfterFunc) SubscriberOption {
 				kitn.SubscriberAfter(kitn.SubscriberResponseFunc(fn)),
 			)
 		}
+	}
+}
+
+// HandlerWithEndpointMiddleware provides an ability to add a
+// middleware of the base type
+func WithEndpointMiddleware(m endpoint.Middleware) SubscriberOption {
+	return func(s *subscriber) {
+		s.middlewares = append(s.middlewares, m)
 	}
 }
 
@@ -204,11 +214,32 @@ func newSubscriber(
 	}
 
 	s.Subscriber = kitn.NewSubscriber(
-		kitep.Endpoint(s.end),
+		kitep.Endpoint(
+			wrap(s.end, s.middlewares...),
+		),
 		kitn.DecodeRequestFunc(s.dec),
 		kitn.EncodeResponseFunc(s.reshn),
 		s.options...,
 	)
 
 	return &s, nil
+}
+
+func wrap(ep endpoint.Endpoint, mws ...endpoint.Middleware) endpoint.Endpoint {
+
+	newmw := endpoint.Chain(
+		noopMiddleware,
+		mws...,
+	)
+
+	return newmw(ep)
+}
+
+func noopMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
+	return func(
+		ctx context.Context,
+		req interface{},
+	) (interface{}, error) {
+		return next(ctx, req)
+	}
 }
