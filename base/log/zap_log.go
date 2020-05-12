@@ -85,8 +85,17 @@ func (zl *zapLogger) Flush() error {
 }
 
 func (zl *zapLogger) With(fields ...Field) Logger {
-	zl.zapLogger = zl.zapLogger.With(zl.convert(fields...)...)
-	return zl
+	if len(fields) == 0 {
+		return zl
+	}
+	l := zl.clone()
+	l.zapLogger = l.zapLogger.With(zl.convert(fields...)...)
+	return l
+}
+
+func (zl *zapLogger) clone() *zapLogger {
+	copy := *zl
+	return &copy
 }
 
 func (zl *zapLogger) Log(kv ...interface{}) error {
