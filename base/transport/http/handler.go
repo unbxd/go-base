@@ -92,7 +92,7 @@ func HandlerWithEndpointMiddleware(fn endpoint.Middleware) HandlerOption {
 	}
 }
 
-// HandlerWithEndpointMiddleware provides an ability to add a
+// HandlerWithFilter provides an ability to add a
 func HandlerWithFilter(f Filter) HandlerOption {
 	return func(h *handler) {
 		h.filters = append(h.filters, f)
@@ -170,4 +170,9 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 
 	hn.Handler = handler
 	return hn
+}
+
+// NewHandler returns http.Handler
+func NewHandler(fn Handler, opts ...HandlerOption) net_http.Handler {
+	return newHandler(fn, opts...)
 }

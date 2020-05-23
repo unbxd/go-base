@@ -237,6 +237,10 @@ func (tr *Transport) HANDLE(met, url string, fn Handler, options ...HandlerOptio
 	)
 }
 
+// Mux returns the default multiplexer
+func (tr *Transport) Mux() Mux { return tr.mux }
+
+// TransportWithFilter sets up filters for the Transport
 func TransportWithFilter(f Filter) TransportOption {
 	return func(tr *Transport) {
 		tr.filters = append(
