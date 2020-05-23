@@ -1,4 +1,4 @@
-package endpoint
+package proxy
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/base/endpoint"
 	"github.com/unbxd/go-base/base/log"
 )
 
@@ -365,13 +366,13 @@ func NewProxyEndpoint(
 	logger log.Logger,
 	downstream string,
 	options ...ProxyOption,
-) (Endpoint, error) {
+) (endpoint.Endpoint, error) {
 	prx, err := NewProxy(logger, downstream, options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "create proxy object failed")
 	}
 
-	return Endpoint(func(
+	return endpoint.Endpoint(func(
 		cx context.Context, req interface{},
 	) (res interface{}, err error) {
 		rq, ok := req.(*net_http.Request)
