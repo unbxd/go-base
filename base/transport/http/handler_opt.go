@@ -52,7 +52,7 @@ func NewTraceLoggerFinalizerHandlerOption(logger log.Logger) HandlerOption {
 func NewRequestIDHandlerOption(customHeaders ...string) HandlerOption {
 	rid := "X-Request-Id"
 
-	fn := func(ctx context.Context, r *net_http.Request) context.Context {
+	fnb := func(ctx context.Context, r *net_http.Request) context.Context {
 		// ignore if already set & no custom headers
 		if r.Header.Get(rid) != "" && len(customHeaders) == 0 {
 			return ctx
@@ -74,8 +74,21 @@ func NewRequestIDHandlerOption(customHeaders ...string) HandlerOption {
 		return ctx
 	}
 
+	fna := func(ctx context.Context, rw http.ResponseWriter) context.Context {
+		id := ctx.Value(ContextKeyRequestXRequestID).(string)
+
+		rw.Header().Set(rid, id)
+
+		for _, hr := range customHeaders {
+			rw.Header().Set(hr, id)
+		}
+
+		return ctx
+	}
+
 	return func(h *handler) {
-		h.options = append(h.options, kit_http.ServerBefore(fn))
+		h.options = append(h.options, kit_http.ServerBefore(fnb))
+		h.options = append(h.options, kit_http.ServerAfter(fna))
 	}
 }
 
