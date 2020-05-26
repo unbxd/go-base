@@ -31,7 +31,7 @@ func WithLogger(logger log.Logger) TransportOption {
 func WithFullDefaults() TransportOption {
 	return func(tr *Transport) {
 		for _, opt := range []HandlerOption{
-			NewRequestIDHandlerOption("Go-Base-Request-ID"),
+			NewRequestIDHandlerOption("Unbxd-Request-ID"),
 			NewCORSHandlerOption(),
 			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
 			NewTraceLoggerFinalizerHandlerOption(tr.logger),
