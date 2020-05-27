@@ -43,6 +43,11 @@ const (
 	defaultTopic           = "go-base-test"
 )
 
+var (
+	FirstOffset = kafgo.FirstOffset
+	LastOffset  = kafgo.LastOffset
+)
+
 // WithGroupIDConsumerOption provides an option to modify the GroupID for
 // a consumer Group
 func WithGroupIDConsumerOption(groupID string) ConsumerOption {
@@ -109,6 +114,20 @@ func WithEndpointConsumerOption(end endpoint.Endpoint) ConsumerOption {
 // WithReaderConsumerOption lets you set the reader for kafka
 func WithReaderConsumerOption(reader *kafgo.Reader) ConsumerOption {
 	return func(c *Consumer) { c.reader = reader }
+}
+
+// WithOffsetConsumerOption lets you set the kafka offset to read from
+func WithOffsetConsumerOption(offset int64) ConsumerOption {
+	return func(c *Consumer) {
+		switch offset {
+		case LastOffset:
+			c.config.StartOffset = LastOffset
+		case FirstOffset:
+			c.config.StartOffset = FirstOffset
+		default:
+			c.config.StartOffset = FirstOffset
+		}
+	}
 }
 
 // Open actually handles the subcriber messages
