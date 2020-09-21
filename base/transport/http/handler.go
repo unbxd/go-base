@@ -32,6 +32,8 @@ type (
 
 		endpoint endpoint.Endpoint
 
+		befores      []BeforeFunc
+		afters       []AfterFunc
 		encoder      Encoder
 		decoder      Decoder
 		errorEncoder ErrorEncoder
@@ -47,6 +49,22 @@ type (
 	// HandlerOption provides ways to modify the handler
 	HandlerOption func(*handler)
 )
+
+// HandlerWithBeforeFunc returns a request handler with customer before function
+func HandlerWithBeforeFunc(fn BeforeFunc) HandlerOption {
+	return func(h *handler) {
+		h.befores = append(h.befores, fn)
+		h.options = append(h.options, kit_http.ServerBefore(kit_http.RequestFunc(fn)))
+	}
+}
+
+// HandlerWithAfterFunc returns a request handler with customer after function
+func HandlerWithAfterFunc(fn AfterFunc) HandlerOption {
+	return func(h *handler) {
+		h.afters = append(h.afters, fn)
+		h.options = append(h.options, kit_http.ServerAfter(kit_http.ServerResponseFunc(fn)))
+	}
+}
 
 // HandlerWithEncoder returns a request handler with customer encoder function
 func HandlerWithEncoder(fn Encoder) HandlerOption {
@@ -134,6 +152,8 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 		errorEncoder: nil,
 		errorhandler: nil,
 		middlewares:  []Middleware{},
+		befores:      []BeforeFunc{},
+		afters:       []AfterFunc{},
 		options: []kit_http.ServerOption{
 			// default server options here
 			kit_http.ServerBefore(populateRequestContext),
