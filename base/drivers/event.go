@@ -29,6 +29,7 @@ var eventName = map[EventType]string{
 type Event struct {
 	Type EventType
 	P    string
+	D    interface{}
 }
 
 // EventType returns event type of the event
@@ -36,3 +37,5 @@ func (e *Event) EventType() EventType { return e.Type }
 
 // Path returns the path of event
 func (e *Event) Path() string { return e.P }
+
+func (e *Event) Data() interface{} { return e.D }

@@ -13,10 +13,10 @@ type Driver interface {
 	Children(path string) ([]string, error)
 	// Delete deletes the node in path
 	Delete(path string) error
-	// Watch watches for changes on the node
-	Watch(path string) (<-chan Event, <-chan error)
-	// Watch tree for a change
-	WatchTree(path string, level int) (<-chan Event, <-chan error)
+	// Watch gets the value and watches for future changes
+	Watch(path string) ([]byte, <-chan Event, <-chan error, error)
+	// Watch gets the children and watches for future changes
+	WatchChildren(path string) ([]string, <-chan Event, <-chan error, error)
 	// Close shuts down the connection for the driver
 	Close() error
 }
