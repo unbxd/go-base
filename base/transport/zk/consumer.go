@@ -49,25 +49,35 @@ func WithDelayOnErrConsumerOption(d DelayOnErr) ConsumerOption {
 	return func(c *Consumer) { c.delayFunc = d }
 }
 
+func WithZkDriver(d drivers.Driver) ConsumerOption {
+	return func(c *Consumer) { c.zk = d }
+}
+
 func (c *Consumer) Open() error {
 
 	ctx := context.Background()
+	logger := c.logger.With(log.String("path", c.path))
 
 	for {
+		logger.Debug("consumer watching on path")
 
-		state := c.zk.(*zook.ZookDriver).State()
-		if state != zk.StateConnected {
-			c.logger.Error("zook is not connected", log.String("state", state.String()))
+		connected := c.zk.(*zook.ZookDriver).IsConnected()
+		if !connected {
+			c.logger.Error("zook is not connected", log.String("state", c.zk.(*zook.ZookDriver).State().String()))
 			//we need to write a connection state manager for zookeeper to reconnect on disconnects
 			time.Sleep(time.Duration(2000) * time.Millisecond)
 			continue
 		}
 
 		data, eventCh, err := c.watch()
+
 		if err == zk.ErrSessionExpired ||
 			err == zk.ErrAuthFailed ||
 			err == zk.ErrClosing ||
 			err == zk.ErrConnectionClosed {
+			logger.Error("zook is not connected",
+				log.String("state", c.zk.(*zook.ZookDriver).State().String()),
+				log.Error(err))
 			time.Sleep(time.Duration(2000) * time.Millisecond)
 			continue
 		}
@@ -82,15 +92,20 @@ func (c *Consumer) Open() error {
 		c.ep(ctx, ent)
 
 		if err != nil {
+			logger.Error("error on watch", log.Error(err))
+
 			if !c.reconnectFunc(err) {
+				logger.Debug("error on watch, not reconnecting", log.Error(err))
 				return err
 			}
 
 			delay := c.delayFunc(err)
-			if delay > 0 {
-				time.Sleep(delay)
-				continue
+			if delay <= 0 {
+				delay = time.Millisecond * 10
 			}
+			logger.Debug("error on watch, reconnecting after delay", log.Error(err))
+			time.Sleep(delay)
+			continue
 		}
 
 		for ent := range eventCh {

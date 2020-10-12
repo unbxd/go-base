@@ -227,6 +227,11 @@ func (d *ZookDriver) Close() error {
 	return nil
 }
 
+func (d *ZookDriver) IsConnected() bool {
+	state := d.conn.State()
+	return state == zk.StateConnected || state == zk.StateHasSession
+}
+
 func (d *ZookDriver) State() zk.State {
 	return d.conn.State()
 }
