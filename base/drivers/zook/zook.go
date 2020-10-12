@@ -145,90 +145,90 @@ func (d *ZookDriver) Delete(path string) error {
 }
 
 // Watch watches for changes on node
-func (d *ZookDriver) Watch(path string) ([]byte, <-chan drivers.Event, <-chan error, error) {
-	var channel = make(chan drivers.Event)
-	var errChannel = make(chan error)
+func (d *ZookDriver) Watch(path string) ([]byte, <-chan *drivers.Event, error) {
+	var channel = make(chan *drivers.Event)
 
 	val, _, ech, err := d.conn.GetW(path)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	go func(path string, channel chan drivers.Event, errChannel chan error) {
+	go func(path string, channel chan *drivers.Event) {
 
 		for {
 			select {
 			case event := <-ech:
 				val, _, ech, err = d.conn.GetW(path)
-				if err != nil {
-					close(channel)
-					errChannel <- err
-					return
-				}
 
-				// This is done to wrap Zookeeper Events into Driver Events
-				// This will ensure the re-usability of the interface
 				switch event.Type {
 				case zk.EventNodeCreated:
-					channel <- drivers.Event{Type: drivers.EventCreated, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventCreated, P: path, D: val, Err: err}
 				case zk.EventNodeDeleted:
-					channel <- drivers.Event{Type: drivers.EventDeleted, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventDeleted, P: path, D: val, Err: err}
 				case zk.EventNodeDataChanged:
-					channel <- drivers.Event{Type: drivers.EventDataChanged, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventDataChanged, P: path, D: val, Err: err}
 				case zk.EventNodeChildrenChanged:
-					channel <- drivers.Event{Type: drivers.EventChildrenChanged, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventChildrenChanged, P: path, D: val, Err: err}
+				}
+
+				if err != nil {
+					close(channel)
+					return
 				}
 			}
 		}
-	}(path, channel, errChannel)
+	}(path, channel)
 
-	return val, channel, errChannel, nil
+	return val, channel, nil
 }
 
-func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan drivers.Event, <-chan error, error) {
-	var channel = make(chan drivers.Event)
-	var errChannel = make(chan error)
+func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan *drivers.Event, error) {
+	var channel = make(chan *drivers.Event)
 
 	val, _, ech, err := d.conn.ChildrenW(path)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	go func(path string, channel chan drivers.Event, errChannel chan error) {
+	go func(path string, channel chan *drivers.Event) {
 
 		for {
 			select {
 			case event := <-ech:
 				val, _, ech, err = d.conn.ChildrenW(path)
-				if err != nil {
-					close(channel)
-					errChannel <- err
-					return
-				}
 
 				// This is done to wrap Zookeeper Events into Driver Events
 				// This will ensure the re-usability of the interface
 				switch event.Type {
 				case zk.EventNodeCreated:
-					channel <- drivers.Event{Type: drivers.EventCreated, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventCreated, P: path, D: val}
 				case zk.EventNodeDeleted:
-					channel <- drivers.Event{Type: drivers.EventDeleted, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventDeleted, P: path, D: val}
 				case zk.EventNodeDataChanged:
-					channel <- drivers.Event{Type: drivers.EventDataChanged, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventDataChanged, P: path, D: val}
 				case zk.EventNodeChildrenChanged: //we will only get this event
-					channel <- drivers.Event{Type: drivers.EventChildrenChanged, P: path, D: val}
+					channel <- &drivers.Event{Type: drivers.EventChildrenChanged, P: path, D: val}
+				}
+
+				if err != nil {
+					close(channel)
+					return
 				}
 			}
 		}
-	}(path, channel, errChannel)
+	}(path, channel)
 
-	return val, channel, errChannel, nil
+	return val, channel, nil
 }
 
 // Close shuts down connection for the driver
 func (d *ZookDriver) Close() error {
 	d.conn.Close()
 	return nil
+}
+
+func (d *ZookDriver) State() zk.State {
+	return d.conn.State()
 }
 
 // NewZKDriver returns new zookeeper driver

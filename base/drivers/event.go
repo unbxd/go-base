@@ -30,6 +30,7 @@ type Event struct {
 	Type EventType
 	P    string
 	D    interface{}
+	Err  error
 }
 
 // EventType returns event type of the event
@@ -39,3 +40,5 @@ func (e *Event) EventType() EventType { return e.Type }
 func (e *Event) Path() string { return e.P }
 
 func (e *Event) Data() interface{} { return e.D }
+
+func (e *Event) Error() error { return e.Err }
