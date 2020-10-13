@@ -7,10 +7,10 @@ import (
 
 // Config defines the Datadog Configuration
 type Config struct {
-	URL        string   `mapstructure:"url"`
-	Namespace  string   `mapstructure:"namespace"`
-	SkipErrors bool     `mapstructure:"skipErrors"`
-	Tags       []string `mapstructure:"tags"`
+	URL        string
+	Namespace  string
+	SkipErrors bool
+	Tags       []string
 }
 
 // Build builds the client based on configuration

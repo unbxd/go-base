@@ -63,7 +63,8 @@ func (c *Consumer) Open() error {
 
 		connected := c.zk.(*zook.ZookDriver).IsConnected()
 		if !connected {
-			c.logger.Error("zook is not connected", log.String("state", c.zk.(*zook.ZookDriver).State().String()))
+			c.logger.Error("zook is not connected",
+				log.String("state", c.zk.(*zook.ZookDriver).State().String()))
 			//we need to write a connection state manager for zookeeper to reconnect on disconnects
 			time.Sleep(time.Duration(2000) * time.Millisecond)
 			continue
@@ -103,7 +104,9 @@ func (c *Consumer) Open() error {
 			if delay <= 0 {
 				delay = time.Millisecond * 10
 			}
-			logger.Debug("error on watch, reconnecting after delay", log.Error(err))
+			logger.Debug("error on watch, reconnecting after delay",
+				log.Int64("delay_ms", delay.Milliseconds()),
+				log.Error(err))
 			time.Sleep(delay)
 			continue
 		}
