@@ -32,6 +32,8 @@ type (
 		reconnectFunc ReconnectOnErr
 		delayFunc     DelayOnErr
 
+		connectionErrDelay time.Duration
+
 		end        endpoint.Endpoint
 		errHandler ErrorHandler
 	}
@@ -65,8 +67,9 @@ func (c *Consumer) Open() error {
 		if !connected {
 			c.logger.Error("zook is not connected",
 				log.String("state", c.zk.(*zook.ZookDriver).State().String()))
+
 			//we need to write a connection state manager for zookeeper to reconnect on disconnects
-			time.Sleep(time.Duration(2000) * time.Millisecond)
+			time.Sleep(c.connectionErrDelay)
 			continue
 		}
 
@@ -76,10 +79,11 @@ func (c *Consumer) Open() error {
 			err == zk.ErrAuthFailed ||
 			err == zk.ErrClosing ||
 			err == zk.ErrConnectionClosed {
+
 			logger.Error("zook is not connected",
 				log.String("state", c.zk.(*zook.ZookDriver).State().String()),
 				log.Error(err))
-			time.Sleep(time.Duration(2000) * time.Millisecond)
+			time.Sleep(c.connectionErrDelay)
 			continue
 		}
 
@@ -102,7 +106,7 @@ func (c *Consumer) Open() error {
 
 			delay := c.delayFunc(err)
 			if delay <= 0 {
-				delay = time.Millisecond * 10
+				delay = time.Millisecond * 2000
 			}
 			logger.Debug("error on watch, reconnecting after delay",
 				log.Int64("delay_ms", delay.Milliseconds()),
@@ -170,6 +174,11 @@ func newConsumer(logger log.Logger, options []ConsumerOption, cs *Consumer) (*Co
 	if cs.errHandler == nil {
 		cs.errHandler = transport.NewLogErrorHandler(logger)
 	}
+
+	if cs.connectionErrDelay == 0 {
+		cs.connectionErrDelay = time.Duration(5000) * time.Millisecond
+	}
+
 	return cs, nil
 }
 
