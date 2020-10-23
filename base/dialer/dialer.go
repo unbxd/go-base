@@ -2,11 +2,11 @@ package dialer
 
 import (
 	"context"
+	"github.com/unbxd/go-base/base/log"
 	"net/http"
 	net_http "net/http"
 
 	"github.com/pkg/errors"
-	log "go.uber.org/zap"
 )
 
 // Validator Errors
@@ -40,7 +40,7 @@ type (
 )
 
 // NewDialer ...
-func NewDialer(logger *log.Logger, opts ...Option) (Dialer, error) {
+func NewDialer(logger log.Logger, opts ...Option) (Dialer, error) {
 	dd := &defaultDialer{
 		lgr:     logger,
 		exec:    nil,
@@ -60,7 +60,7 @@ func NewDialer(logger *log.Logger, opts ...Option) (Dialer, error) {
 }
 
 // NewDefaultDialer returns new default http dialer
-func NewDefaultDialer(logger *log.Logger, conf *Conf) (Dialer, error) {
+func NewDefaultDialer(logger log.Logger, conf *Conf) (Dialer, error) {
 	return NewDialer(
 		logger,
 		WithRoundTripperExecutor(conf),
@@ -69,12 +69,11 @@ func NewDefaultDialer(logger *log.Logger, conf *Conf) (Dialer, error) {
 }
 
 // NewTimedDialer returns the dialer which times out
-func NewTimedDialer(logger *log.Logger, conf *Conf) (Dialer, error) {
+func NewTimedDialer(logger log.Logger, conf *Conf) (Dialer, error) {
 	return NewDialer(
 		logger,
 		WithRoundTripperExecutor(conf),
-		WithTimeoutExecutor(conf.To),
-		WithDefaultValidators(),
+		WithTimeoutExecutor(&conf.To),
 	)
 }
 

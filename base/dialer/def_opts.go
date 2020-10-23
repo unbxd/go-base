@@ -11,9 +11,9 @@ import (
 
 type (
 	Conf struct {
-		Tr *TransportConf
-		Nw *NetworkConf
-		To *TimeoutConf
+		Tr TransportConf
+		Nw NetworkConf
+		To TimeoutConf
 	}
 
 	TransportConf struct {

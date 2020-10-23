@@ -2,11 +2,10 @@ package dialer
 
 import (
 	"context"
+	"github.com/unbxd/go-base/base/log"
 	"net/http"
 
 	"github.com/pkg/errors"
-
-	log "go.uber.org/zap"
 )
 
 // Error response
@@ -26,7 +25,7 @@ type (
 
 type (
 	defaultDialer struct {
-		lgr  *log.Logger
+		lgr  log.Logger
 		exec executor
 
 		reqopts []RequestOption
