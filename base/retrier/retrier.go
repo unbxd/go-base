@@ -46,7 +46,7 @@ type (
 	// Classifier takes a given error generated
 	// by the Proxy and assigns a given state based
 	// on the error emitted
-	Classifier func(error) State
+	Classifier func(error, interface{}) State
 
 	// Backoff defines the strategy in which the duration
 	// is computed for the next retry
@@ -113,6 +113,8 @@ func (r *Retrier) Endpoint() endpoint.Endpoint {
 			// again, till it either hits the count limit or
 			// reach the deadline computed by the arithmetic
 			// request_deadline * tolerance_factor + tolerance_factor
+
+			//TODO check with ujjwal, why multiplication upto 10 on deadline?
 			cx, canc = context.WithTimeout(
 				cx, time.Duration(
 					ddl.Seconds()*
@@ -135,7 +137,7 @@ func (r *Retrier) Endpoint() endpoint.Endpoint {
 
 			rsi, err = r.fn(cx, rqi)
 
-			switch cs := r.classfr(err); cs {
+			switch cs := r.classfr(err, rsi); cs {
 			case PASS, FAIL:
 				r.logger.Debug("error classified as PASS/FAIL")
 
@@ -211,7 +213,7 @@ func NewRetrier(logger log.Logger, fn endpoint.Endpoint, options ...RetrierOptio
 
 // default classifier
 func classifier(logger log.Logger) Classifier {
-	return func(err error) State {
+	return func(err error, res interface{}) State {
 		switch {
 		// Hysterix Errors
 		case err == hystrix.ErrCircuitOpen:
