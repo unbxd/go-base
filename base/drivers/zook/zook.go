@@ -44,11 +44,6 @@ func (d *ZookDriver) Open() error {
 		return errors.Wrap(err, "Error initializing ZK Driver")
 	}
 
-	err = d.sanitizeSetup(conn)
-	if err != nil {
-		return errors.Wrap(err, "Error stanitizing the setup")
-	}
-
 	d.conn = conn
 	d.acl = zk.WorldACL(zk.PermAll)
 	// return d.sanitizeSetup()
