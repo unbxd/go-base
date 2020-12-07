@@ -1,9 +1,11 @@
 package zook
 
 import (
-	"github.com/unbxd/go-base/base/drivers"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/unbxd/go-base/base/drivers"
 
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
@@ -177,31 +179,90 @@ func (d *ZookDriver) Watch(path string) ([]byte, <-chan *drivers.Event, error) {
 	return val, channel, nil
 }
 
+// WatchChildren watches for changes on node and its children
 func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan *drivers.Event, error) {
 	var channel = make(chan *drivers.Event)
-
 	val, _, ech, err := d.conn.ChildrenW(path)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	//add to zook driver, one entry per children
+	chCh := make([]<-chan zk.Event, len(val))
+	for i := 0; i < len(val); i++ {
+		_, _, ech, err := d.conn.GetW(path + "/" + val[i])
+		if err != nil {
+			close(channel)
+		}
+		chCh[i] = ech
+	}
+	//adding parent event channel too
+	chCh = append(chCh, ech)
+	//merging all events into one channel
+	mCh := merge(chCh)
 	go func(path string, channel chan *drivers.Event) {
 
 		for {
 			select {
 			case event := <-ech:
 				val, _, ech, err = d.conn.ChildrenW(path)
-
+				//add watch on this new node
 				// This is done to wrap Zookeeper Events into Driver Events
 				// This will ensure the re-usability of the interface
 				switch event.Type {
 				case zk.EventNodeCreated:
-					channel <- &drivers.Event{Type: drivers.EventCreated, P: path, D: val}
+					newC, _, uCh, err := d.conn.GetW(event.Path)
+					if err != nil {
+						close(channel)
+					}
+					tmp := make([]<-chan zk.Event, 1)
+					tmp = append(tmp, uCh)
+					tmp = append(tmp, mCh)
+					mCh = merge(tmp)
+					channel <- &drivers.Event{Type: drivers.EventCreated, P: path, D: string(newC)}
 				case zk.EventNodeDeleted:
-					channel <- &drivers.Event{Type: drivers.EventDeleted, P: path, D: val}
+					delC, _, uCh, err := d.conn.GetW(event.Path)
+					if err != nil {
+						close(channel)
+					}
+					tmp := make([]<-chan zk.Event, 1)
+					tmp = append(tmp, uCh)
+					tmp = append(tmp, mCh)
+					mCh = merge(tmp)
+					channel <- &drivers.Event{Type: drivers.EventDeleted, P: path, D: string(delC)}
 				case zk.EventNodeDataChanged:
-					channel <- &drivers.Event{Type: drivers.EventDataChanged, P: path, D: val}
-				case zk.EventNodeChildrenChanged: //we will only get this event
+					chC, _, uCh, err := d.conn.GetW(event.Path)
+					if err != nil {
+						close(channel)
+					}
+					tmp := make([]<-chan zk.Event, 1)
+					tmp = append(tmp, uCh)
+					tmp = append(tmp, mCh)
+					mCh = merge(tmp)
+					channel <- &drivers.Event{Type: drivers.EventDataChanged, P: path, D: string(chC)}
+				case zk.EventNodeChildrenChanged:
+					if event.Path == path {
+						//find new added child and add its channel to mECh
+						nChList, _, err := d.conn.Children(path)
+						if err != nil {
+							close(channel)
+						}
+						diffChList := difference(nChList, val)
+						tmp := make([]<-chan zk.Event, len(diffChList))
+						for _, child := range diffChList {
+							_, _, ech, err := d.conn.GetW(path + "/" + child)
+							if err != nil {
+								close(channel)
+							}
+							tmp = append(tmp, ech)
+						}
+						_, _, rCh, err := d.conn.ChildrenW(path)
+						if err != nil {
+							close(channel)
+						}
+						tmp = append(tmp, rCh)
+						tmp = append(tmp, mCh)
+						mCh = merge(tmp)
+					}
 					channel <- &drivers.Event{Type: drivers.EventChildrenChanged, P: path, D: val}
 				}
 
@@ -238,4 +299,44 @@ func NewZKDriver(servers []string, timeout time.Duration, rootDir string) driver
 		timeout: timeout,
 		rootDir: rootDir,
 	}
+}
+func difference(slice1 []string, slice2 []string) []string {
+	diffStr := []string{}
+	m := map[string]int{}
+
+	for _, s1Val := range slice1 {
+		m[s1Val] = 1
+	}
+	for _, s2Val := range slice2 {
+		m[s2Val] = m[s2Val] + 1
+	}
+
+	for mKey, mVal := range m {
+		if mVal == 1 {
+			diffStr = append(diffStr, mKey)
+		}
+	}
+
+	return diffStr
+}
+func merge(cs []<-chan zk.Event) <-chan zk.Event {
+	var wg sync.WaitGroup
+	out := make(chan zk.Event)
+
+	output := func(c <-chan zk.Event) {
+		for n := range c {
+			out <- n
+		}
+		wg.Done()
+	}
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
 }
