@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"github.com/unbxd/go-base/base/endpoint"
-	"github.com/unbxd/go-base/base/validator"
+	"github.com/apoorvprecisely/go-base/base/endpoint"
+	"github.com/apoorvprecisely/go-base/base/validator"
 )
 
 func ValidatorMw(v validator.Validator) endpoint.Middleware {

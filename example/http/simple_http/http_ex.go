@@ -9,8 +9,8 @@ import (
 	"math/rand"
 	net_http "net/http"
 
-	"github.com/unbxd/go-base/base/log"
-	"github.com/unbxd/go-base/base/transport/http"
+	"github.com/apoorvprecisely/go-base/base/log"
+	"github.com/apoorvprecisely/go-base/base/transport/http"
 )
 
 /*

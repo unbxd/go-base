@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/unbxd/go-base/base/log"
+	"github.com/apoorvprecisely/go-base/base/log"
 	net_http "net/http"
 )
 

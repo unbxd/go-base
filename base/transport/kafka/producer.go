@@ -6,8 +6,8 @@ import (
 	"github.com/go-kit/kit/transport"
 	"github.com/pkg/errors"
 	kafgo "github.com/segmentio/kafka-go"
-	"github.com/unbxd/go-base/base/endpoint"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/apoorvprecisely/go-base/base/endpoint"
+	"github.com/apoorvprecisely/go-base/base/log"
 )
 
 type (

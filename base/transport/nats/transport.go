@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	natn "github.com/nats-io/nats.go"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/apoorvprecisely/go-base/base/log"
 	"sync"
 	"time"
 )

@@ -7,8 +7,8 @@ import (
 	kitn "github.com/go-kit/kit/transport/nats"
 	natn "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"github.com/unbxd/go-base/base/endpoint"
-	"github.com/unbxd/go-base/base/log"
+	"github.com/apoorvprecisely/go-base/base/endpoint"
+	"github.com/apoorvprecisely/go-base/base/log"
 )
 
 type (
