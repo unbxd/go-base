@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/unbxd/go-base/base/log"
+	"go.elastic.co/apm/module/apmhttp"
 	net_http "net/http"
 )
 
@@ -38,5 +39,12 @@ func PanicRecovery(logger log.Logger) Filter {
 
 			next.ServeHTTP(w, r)
 		})
+	}
+}
+
+//elastic apm filter wrapper
+func ElasticApm() Filter {
+	return func(next net_http.Handler) net_http.Handler {
+		return apmhttp.Wrap(next)
 	}
 }
