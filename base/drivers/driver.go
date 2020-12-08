@@ -16,7 +16,7 @@ type Driver interface {
 	// Watch gets the value and watches for future changes
 	Watch(path string) ([]byte, <-chan *Event, error)
 	// Watch gets the children and watches for future changes
-	WatchChildren(path string) ([]string, <-chan *Event, error)
+	WatchDir(path string) ([]string, <-chan *Event, error)
 	// Close shuts down the connection for the driver
 	Close() error
 }
