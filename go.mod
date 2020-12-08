@@ -20,6 +20,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/kafka-go v0.3.5
 	github.com/unbxd/hystrix-go v0.0.0-20191020153754-f2b80b31a977
+	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.10.0
 )
