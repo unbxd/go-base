@@ -235,15 +235,15 @@ func (d *ZookDriver) WatchDirWithCh(path string, channel chan *drivers.Event) er
 					go d.WatchDirWithCh(newNode, channel)
 
 					//launch new watch on node
-					nodes, _, _ := d.conn.Children(newNode)
-					for _, node := range nodes {
-						n := newNode + "/" + node
-						_, _, err := d.conn.Get(n)
-						if err != nil {
-							continue
-						}
-						go d.WatchWithCh(n, channel)
-					}
+					// nodes, _, _ := d.conn.Children(newNode)
+					// for _, node := range nodes {
+					// 	n := newNode + "/" + node
+					// 	_, _, err := d.conn.Get(n)
+					// 	if err != nil {
+					// 		continue
+					// 	}
+					// 	go d.WatchWithCh(n, channel)
+					// }
 				}
 				channel <- &drivers.Event{Type: drivers.EventChildrenChanged, P: e.Path, D: val, Err: err}
 			}
