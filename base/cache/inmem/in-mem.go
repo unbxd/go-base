@@ -180,6 +180,17 @@ func (c *cache) Get(k string) (interface{}, bool) {
 	return val, true
 }
 
+func (c *cache) GetAll() map[string]interface{} {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	values := make(map[string]interface{}, 0)
+	for k, v := range c.items {
+		values[k] = v.Value
+	}
+	//c.print()
+	return values
+}
+
 func (c *cache) GetItem(k string) (*item, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
