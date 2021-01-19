@@ -236,6 +236,13 @@ func (c *cache) MarkExpired() {
 	}
 }
 
+//Load initializes a cache
+func (c *cache) Load(values map[string]interface{}) {
+	for k, v := range values {
+		c.Set(k, v)
+	}
+}
+
 //Reload replaces internal map with a new one
 func (c *cache) Reload(values map[string]interface{}) {
 	var removed []string

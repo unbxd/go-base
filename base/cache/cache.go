@@ -31,6 +31,9 @@ type Cache interface {
 
 	//Reload reloads the entire cache with a replacement map
 	Reload(values map[string]interface{})
+
+	//Load intializes the cache with a map
+	Load(values map[string]interface{})
 }
 
 //NewInMemoryCache creates a new in memory cache
