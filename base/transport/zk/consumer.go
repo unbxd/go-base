@@ -3,6 +3,8 @@ package zk
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-kit/kit/transport"
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
@@ -10,7 +12,6 @@ import (
 	"github.com/unbxd/go-base/base/drivers/zook"
 	"github.com/unbxd/go-base/base/endpoint"
 	"github.com/unbxd/go-base/base/log"
-	"time"
 )
 
 const (
@@ -145,7 +146,7 @@ func NewConsumer(
 	return newConsumer(logger, options, cs)
 }
 
-func NewChildConsumer(
+func NewDirConsumer(
 	logger log.Logger,
 	path string,
 	options ...ConsumerOption,
@@ -187,7 +188,7 @@ func (c *Consumer) watch() (interface{}, <-chan *drivers.Event, error) {
 	case node:
 		return c.zk.Watch(c.path)
 	case children:
-		return c.zk.WatchChildren(c.path)
+		return c.zk.WatchDir(c.path)
 	default:
 		return nil, nil, errors.New(fmt.Sprintf("unknown watchtype %s", c.watchType))
 	}
