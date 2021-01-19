@@ -1,10 +1,12 @@
 package cache
 
 import (
-	"github.com/unbxd/go-base/base/cache/inmem"
 	"time"
+
+	"github.com/unbxd/go-base/base/cache/inmem"
 )
 
+//Cache defines methods for a cache
 type Cache interface {
 	// Set adds item to cache replacing existing one
 	Set(k string, val interface{})
@@ -26,8 +28,12 @@ type Cache interface {
 	// Delete deletes the key from the cache, and doesn't do anything
 	// if key is not found
 	Delete(k string)
+
+	//Reload reloads the entire cache with a replacement map
+	Reload(values map[string]interface{})
 }
 
+//NewInMemoryCache creates a new in memory cache
 func NewInMemoryCache(
 	expiry time.Duration,
 	eviction time.Duration,

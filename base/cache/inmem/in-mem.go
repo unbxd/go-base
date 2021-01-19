@@ -29,6 +29,9 @@ type (
 		mutex      sync.RWMutex
 		onExpired  func(string, interface{})
 		onEvicted  func(string, interface{})
+		onAdd      func(string, interface{})
+		onDelete   func(string, interface{})
+		onSet      func(string, interface{})
 		janitor    *janitor
 	}
 
@@ -87,8 +90,10 @@ func (c *cache) delete(k string) (interface{}, bool) {
 func (c *cache) Set(k string, val interface{}) {
 	c.mutex.Lock()
 	c.set(k, val)
-	// c.print()
 	c.mutex.Unlock()
+	if c.onSet != nil {
+		c.onSet(k, val)
+	}
 }
 
 // Add an item to the cache only if an item doesn't exist for the given key
@@ -103,6 +108,9 @@ func (c *cache) Add(k string, val interface{}) error {
 
 	c.set(k, val)
 	c.mutex.Unlock()
+	if c.onAdd != nil {
+		c.onAdd(k, val)
+	}
 	return nil
 }
 
@@ -188,6 +196,10 @@ func (c *cache) Delete(key string) {
 	if evicted {
 		c.onEvicted(key, v)
 	}
+
+	if c.onDelete != nil {
+		c.onDelete(key, v)
+	}
 }
 
 func (c *cache) print() {
@@ -220,6 +232,41 @@ func (c *cache) MarkExpired() {
 	if onExpired {
 		for _, ei := range expiredItems {
 			c.onExpired(ei.key, ei.value)
+		}
+	}
+}
+
+//Reload replaces internal map with a new one
+func (c *cache) Reload(values map[string]interface{}) {
+	var removed []string
+	for k := range c.items {
+		if _, ok := values[k]; !ok {
+			//key not present in newer map
+			removed = append(removed, k)
+		}
+	}
+
+	for _, k := range removed {
+		c.Delete(k)
+	}
+
+	var added []string
+	for k := range values {
+		if _, ok := c.items[k]; !ok {
+			//key not present in current map
+			added = append(added, k)
+		}
+	}
+
+	for _, k := range added {
+		c.Add(k, values[k])
+	}
+
+	for k, v := range values {
+		if oldvalue, ok := c.Get(k); ok {
+			if v != oldvalue {
+				c.Set(k, v)
+			}
 		}
 	}
 }
@@ -286,6 +333,24 @@ func (c *cache) OnEvicted(fn func(string, interface{})) {
 	c.mutex.Unlock()
 }
 
+func (c *cache) OnAdd(fn func(string, interface{})) {
+	c.mutex.Lock()
+	c.onAdd = fn
+	c.mutex.Unlock()
+}
+
+func (c *cache) OnDelete(fn func(string, interface{})) {
+	c.mutex.Lock()
+	c.onDelete = fn
+	c.mutex.Unlock()
+}
+
+func (c *cache) OnSet(fn func(string, interface{})) {
+	c.mutex.Lock()
+	c.onSet = fn
+	c.mutex.Unlock()
+}
+
 func newCache(
 	ex time.Duration,
 	ev time.Duration,
@@ -344,15 +409,38 @@ var (
 	defaultEvictTicker  = time.Duration(5) * time.Minute
 )
 
+//WithOnEvictCallback allows configuring a fn to be called on eviction
 func WithOnEvictCallback(fn func(k string, val interface{})) Option {
 	return func(c *cache) {
 		c.onEvicted = fn
 	}
 }
 
+//WithOnExpiredCallback allows configuring a fn to be called on expiry
 func WithOnExpiredCallback(fn func(k string, val interface{})) Option {
 	return func(c *cache) {
 		c.onExpired = fn
+	}
+}
+
+//WithOnAddCallback allows configuring a fn to be called on add
+func WithOnAddCallback(fn func(k string, val interface{})) Option {
+	return func(c *cache) {
+		c.onAdd = fn
+	}
+}
+
+//WithOnSetCallback allows configuring a fn to be called on set
+func WithOnSetCallback(fn func(k string, val interface{})) Option {
+	return func(c *cache) {
+		c.onSet = fn
+	}
+}
+
+//WithOnDeleteCallback allows configuring a fn to be called on delete
+func WithOnDeleteCallback(fn func(k string, val interface{})) Option {
+	return func(c *cache) {
+		c.onDelete = fn
 	}
 }
 
