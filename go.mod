@@ -8,6 +8,7 @@ require (
 	github.com/dimfeld/httptreemux/v5 v5.0.2
 	github.com/go-kit/kit v0.9.0
 	github.com/go-playground/validator/v10 v10.2.0
+	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.2 // indirect
 	github.com/nats-io/nats-server v1.4.1 // indirect
