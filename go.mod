@@ -7,7 +7,6 @@ require (
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.0.2
 	github.com/go-kit/kit v0.9.0
-	github.com/go-playground/validator/v10 v10.2.0
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.2 // indirect
@@ -24,4 +23,5 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.10.0
+	google.golang.org/grpc v1.36.0
 )

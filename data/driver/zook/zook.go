@@ -2,11 +2,13 @@ package zook
 
 import (
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/unbxd/go-base/data/driver"
 
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
-	"github.com/unbxd/go-base/data/driver"
 )
 
 // ZookDriver defines zookeeper driver for Albus
@@ -142,14 +144,17 @@ func (d *ZookDriver) Delete(path string) error {
 // Watch watches for changes on node
 func (d *ZookDriver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
 	var channel = make(chan *driver.Event)
+	return d.WatchWithCh(path, channel)
+}
 
+// WatchWithCh watches for changes on node
+func (d *ZookDriver) WatchWithCh(path string, channel chan *driver.Event) ([]byte, <-chan *driver.Event, error) {
 	val, _, ech, err := d.conn.GetW(path)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	go func(path string, channel chan *driver.Event) {
-
 		for {
 			select {
 			case event := <-ech:
@@ -177,43 +182,104 @@ func (d *ZookDriver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
 	return val, channel, nil
 }
 
-func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan *driver.Event, error) {
+// WatchDir watches for changes on node
+func (d *ZookDriver) WatchDir(path string) ([]string, <-chan *driver.Event, error) {
 	var channel = make(chan *driver.Event)
+	go d.WatchDirWithCh(path, channel)
+	return nil, channel, nil
+}
 
-	val, _, ech, err := d.conn.ChildrenW(path)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	go func(path string, channel chan *driver.Event) {
-
-		for {
-			select {
-			case event := <-ech:
-				val, _, ech, err = d.conn.ChildrenW(path)
-
-				// This is done to wrap Zookeeper Events into Driver Events
-				// This will ensure the re-usability of the interface
-				switch event.Type {
-				case zk.EventNodeCreated:
-					channel <- &driver.Event{Type: driver.EventCreated, P: path, D: val}
-				case zk.EventNodeDeleted:
-					channel <- &driver.Event{Type: driver.EventDeleted, P: path, D: val}
-				case zk.EventNodeDataChanged:
-					channel <- &driver.Event{Type: driver.EventDataChanged, P: path, D: val}
-				case zk.EventNodeChildrenChanged: //we will only get this event
-					channel <- &driver.Event{Type: driver.EventChildrenChanged, P: path, D: val}
-				}
-
+// WatchDirWithCh watches for changes on node
+func (d *ZookDriver) WatchDirWithCh(path string, channel chan *driver.Event) error {
+	for {
+		ch, _, chC, err := d.conn.ChildrenW(path)
+		if err != nil {
+			return err
+		}
+		//launch dir watch on all children
+		for _, child := range ch {
+			go d.WatchDirWithCh(path+"/"+child, channel)
+		}
+		//add node watcher on current node
+		_, _, nodeCh, err := d.conn.GetW(path)
+		if err != nil {
+			return err
+		}
+		chArr := make([]<-chan zk.Event, 2)
+		chArr = append(chArr, chC)
+		chArr = append(chArr, nodeCh)
+		mCh := merge(chArr)
+		select {
+		case e := <-mCh:
+			val, _, err := d.conn.Get(e.Path)
+			switch e.Type {
+			case zk.EventNodeCreated:
+				channel <- &driver.Event{Type: driver.EventCreated, P: e.Path, D: val, Err: err}
+			case zk.EventNodeDeleted:
+				channel <- &driver.Event{Type: driver.EventDeleted, P: e.Path, D: val, Err: err}
+			case zk.EventNodeDataChanged:
+				channel <- &driver.Event{Type: driver.EventDataChanged, P: e.Path, D: val, Err: err}
+			case zk.EventNodeChildrenChanged:
+				newCh, _, err := d.conn.Children(e.Path)
 				if err != nil {
-					close(channel)
-					return
+					return err
 				}
+
+				// a node was added -- watch the new node
+				for _, child := range newCh {
+					if contains(ch, child) {
+						continue
+					}
+					newNode := e.Path + "/" + child
+					//launch new watch for node on all children
+					go d.WatchDirWithCh(newNode, channel)
+
+					//launch new watch on node
+					// nodes, _, _ := d.conn.Children(newNode)
+					// for _, node := range nodes {
+					// 	n := newNode + "/" + node
+					// 	_, _, err := d.conn.Get(n)
+					// 	if err != nil {
+					// 		continue
+					// 	}
+					// 	go d.WatchWithCh(n, channel)
+					// }
+				}
+				channel <- &driver.Event{Type: driver.EventChildrenChanged, P: e.Path, D: val, Err: err}
 			}
 		}
-	}(path, channel)
+	}
+}
 
-	return val, channel, nil
+func merge(cs []<-chan zk.Event) <-chan zk.Event {
+	var wg sync.WaitGroup
+	out := make(chan zk.Event)
+
+	output := func(c <-chan zk.Event) {
+		for n := range c {
+			out <- n
+		}
+		wg.Done()
+	}
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 // Close shuts down connection for the driver
@@ -222,11 +288,13 @@ func (d *ZookDriver) Close() error {
 	return nil
 }
 
+// IsConnected returns if connected
 func (d *ZookDriver) IsConnected() bool {
 	state := d.conn.State()
 	return state == zk.StateConnected || state == zk.StateHasSession
 }
 
+// State returns the corrent connection state
 func (d *ZookDriver) State() zk.State {
 	return d.conn.State()
 }
