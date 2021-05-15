@@ -4,12 +4,13 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"net/http"
 	net_http "net/http"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 	"github.com/unbxd/go-base/utils/log"
 )
 
@@ -53,12 +54,18 @@ func NewRequestIDHandlerOption(customHeaders ...string) HandlerOption {
 	rid := "X-Request-Id"
 
 	fnb := func(ctx context.Context, r *net_http.Request) context.Context {
+		var id string
 		// ignore if already set & no custom headers
 		if r.Header.Get(rid) != "" && len(customHeaders) == 0 {
 			return ctx
 		}
 
-		id := uuid.NewV4().String()
+		uid, err := uuid.NewV4()
+		if err != nil {
+			id = strconv.FormatInt(time.Now().UnixNano(), 10)
+		} else {
+			id = uid.String()
+		}
 
 		if r.Header.Get(rid) != "" {
 			id = r.Header.Get(rid)
