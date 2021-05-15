@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/DataDog/datadog-go v2.3.0+incompatible
+	github.com/Showmax/go-fqdn v1.0.0 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.0.2
 	github.com/go-kit/kit v0.9.0
