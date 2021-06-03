@@ -3,11 +3,11 @@ package retrier
 import (
 	"context"
 	"math/rand"
+	net_http "net/http"
 	"time"
 
 	"github.com/unbxd/go-base/kit/endpoint"
 	"github.com/unbxd/go-base/utils/log"
-	"github.com/unbxd/go-base/net/dialer"
 
 	"github.com/pkg/errors"
 	"github.com/unbxd/hystrix-go/hystrix"
@@ -18,6 +18,16 @@ const (
 	PASS State = iota
 	FAIL
 	RETRY
+)
+
+var (
+	ErrInternalServer = errors.New("internal server error, response code > 500")
+	ErrNotFound       = errors.New("resource not found, response code = 404")
+	ErrResponseIsNil  = errors.New("'response' from downstream is nil")
+	ErrExec           = errors.New("executor failed")
+
+	ErrRequestIsNotHTTP  = errors.New("retrier request is not net_http.Request")
+	ErrResponseIsNotHTTP = errors.New("retrier response is not net_http.Response")
 )
 
 type (
@@ -58,6 +68,8 @@ type (
 	// the downstream with simulteneous requests
 	Jitter func() time.Duration
 
+	Executor func(context.Context, *net_http.Request) (*net_http.Response, error)
+
 	// Retrier retries to perform a single operation
 	// multiple times based on the parameters provided
 	Retrier struct {
@@ -81,12 +93,26 @@ func (r *Retrier) duration(ctr int) time.Duration {
 	return r.backoff(ctr) + r.jitter()
 }
 
+func (r *Retrier) Executor() Executor {
+	var fn = r.Endpoint()
+
+	return func(
+		cx context.Context,
+		req *net_http.Request,
+	) (res *net_http.Response, err error) {
+		rsi, err := fn(cx, req)
+
+		rs, ok := rsi.(*net_http.Response)
+		if !ok {
+			return nil, ErrResponseIsNotHTTP
+		}
+
+		return rs, err
+	}
+}
+
 // Endpoint returns endpoint.Endpoint with retry wrapped
 func (r *Retrier) Endpoint() endpoint.Endpoint {
-	var (
-		tfn = tolerance()
-	)
-
 	return func(
 		cx context.Context,
 		rqi interface{},
@@ -99,7 +125,7 @@ func (r *Retrier) Endpoint() endpoint.Endpoint {
 			req       Deadliner
 			canc      context.CancelFunc
 			stamp     = time.Now()
-			tolerance = tfn()
+			tolerance = tolerance()()
 			ddl       time.Duration
 		)
 
@@ -223,7 +249,7 @@ func classifier(logger log.Logger) Classifier {
 			fallthrough
 		case err == hystrix.ErrTimeout:
 			fallthrough
-		case errors.Cause(err) == dialer.ErrNotFound:
+		case errors.Cause(err) == ErrNotFound:
 			logger.Debug("FAILING with Classified ERROR",
 				log.String("error", err.Error()),
 				log.String("error_cause", errors.Cause(err).Error()),
@@ -231,11 +257,11 @@ func classifier(logger log.Logger) Classifier {
 			return FAIL
 
 		// Errors that will trigger retry
-		case errors.Cause(err) == dialer.ErrInternalServer:
+		case errors.Cause(err) == ErrInternalServer:
 			fallthrough
-		case errors.Cause(err) == dialer.ErrResponseIsNil:
+		case errors.Cause(err) == ErrResponseIsNil:
 			fallthrough
-		case errors.Cause(err) == dialer.ErrExec:
+		case errors.Cause(err) == ErrExec:
 			logger.Debug("RETRYING with Classified ERROR",
 				log.String("error", err.Error()),
 				log.String("error_cause", errors.Cause(err).Error()),
@@ -396,4 +422,30 @@ func NewRetrierFromConfig(fn endpoint.Endpoint, lg log.Logger, cfg *RetrierConf,
 	}
 
 	return NewRetrier(lg, fn, opts...)
+}
+
+func toEndpoint(ex Executor) endpoint.Endpoint {
+	return func(
+		cx context.Context,
+		req interface{},
+	) (res interface{}, err error) {
+		rq, ok := req.(*net_http.Request)
+		if !ok {
+			return nil, ErrRequestIsNotHTTP
+		}
+
+		return ex(cx, rq)
+	}
+}
+
+func NewExecutorRetrier(
+	ex Executor,
+	logger log.Logger,
+	options ...RetrierOption,
+) (*Retrier, error) {
+	return NewRetrier(
+		logger,
+		toEndpoint(ex),
+		options...,
+	)
 }

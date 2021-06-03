@@ -2,9 +2,10 @@ package dialer
 
 import (
 	"context"
-	"github.com/unbxd/go-base/utils/log"
 	"net/http"
 	net_http "net/http"
+
+	"github.com/unbxd/go-base/utils/log"
 
 	"github.com/pkg/errors"
 )
