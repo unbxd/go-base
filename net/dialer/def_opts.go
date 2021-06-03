@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/net/retrier"
+	"github.com/unbxd/go-base/utils/log"
 )
 
 type (
@@ -220,6 +222,66 @@ func WithTimeoutExecutor(cfg *TimeoutConf) Option {
 		}
 
 		dd.exec = fn
+		return
+	}
+}
+
+func WithRetrierExecutor(
+	logger log.Logger,
+	opts ...retrier.RetrierOption,
+) Option {
+	var (
+		ex executor // existing executor
+
+		classifier = func(err error, res interface{}) retrier.State {
+			switch {
+			case err == nil:
+				return retrier.PASS
+			case errors.Cause(err) == ErrInternalServer ||
+				errors.Cause(err) == ErrResponseIsNil ||
+				errors.Cause(err) == ErrExec:
+				logger.Debug("RETRYING with Classified ERROR",
+					log.String("error", err.Error()),
+					log.String("error_cause", errors.Cause(err).Error()),
+				)
+				return retrier.RETRY
+			default:
+				logger.Debug(
+					"FAILING with unidentified error",
+					log.String("error", err.Error()),
+					log.String("error_cause", errors.Cause(err).Error()),
+				)
+				return retrier.FAIL
+			}
+		}
+
+		options = append([]retrier.RetrierOption{
+			retrier.WithClassifier(classifier),
+		}, opts...)
+	)
+
+	return func(dd *defaultDialer) (err error) {
+		if dd.exec == nil {
+			return errors.Wrap(
+				errNeedExec, "[dialer.opts] timed",
+			)
+		}
+
+		ex = dd.exec
+
+		ret, err := retrier.NewExecutorRetrier(
+			retrier.Executor(ex),
+			logger,
+			options...,
+		)
+		if err != nil {
+			return errors.Wrap(
+				err, "failed to wrap dailer with retrier",
+			)
+		}
+
+		dd.exec = executor(ret.Executor())
+
 		return
 	}
 }

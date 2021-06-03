@@ -4,12 +4,11 @@ go 1.12
 
 require (
 	github.com/DataDog/datadog-go v2.3.0+incompatible
-	github.com/Showmax/go-fqdn v1.0.0 // indirect
+	github.com/Showmax/go-fqdn v1.0.0
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.0.2
 	github.com/go-kit/kit v0.9.0
-	github.com/go-playground/validator/v10 v10.2.0
-	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.2 // indirect
