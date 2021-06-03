@@ -1,12 +1,16 @@
 name: Go
-on: [push]
+on:
+  push:
+  pull_request:
+  release:
 jobs:
 
   build:
-    name: Build
-    runs-on: ubuntu-latest
+    if: github.repository == 'unbxd/go-base'
+    runs-on: ubuntu-18.04
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.PLATFORM_SLACK_WEBHOOK_URL }}
     steps:
-
     - name: Set up Go 1.14
       uses: actions/setup-go@v1
       with:
@@ -16,7 +20,14 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
 
+    - name: golangci-lint
+      id: golangci-lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.29
+
     - name: Get dependencies
+      id: get_depenednecies
       run: |
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
@@ -24,4 +35,12 @@ jobs:
             dep ensure
         fi
     - name: Build
+      id: build
       run: go build -v ./...
+
+    - uses: act10ns/slack@v1
+      with:
+        status: ${{ job.status }}
+        steps: ${{ toJson(steps) }}
+        channel: '#platform-github-actions'
+      if: always()
