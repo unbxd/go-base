@@ -24,4 +24,5 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.10.0
+	google.golang.org/grpc v1.34.1
 )
