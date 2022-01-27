@@ -57,6 +57,13 @@ func NewDialer(logger log.Logger, opts ...Option) (Dialer, error) {
 		}
 	}
 
+	if dd.exec == nil {
+		return nil, errors.Wrap(
+			errNeedExec,
+			"executory cannot be empty, possible missing options 'WithDefaultExecutor'",
+		)
+	}
+
 	return dd, nil
 }
 

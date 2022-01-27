@@ -2,8 +2,9 @@ package dialer
 
 import (
 	"context"
-	"github.com/unbxd/go-base/utils/log"
 	"net/http"
+
+	"github.com/unbxd/go-base/utils/log"
 
 	"github.com/pkg/errors"
 )
@@ -43,6 +44,13 @@ func (dd *defaultDialer) Dial(
 	// request decorator
 	for _, fn := range dd.reqopts {
 		fn(cx, req)
+	}
+
+	if dd.exec == nil {
+		return nil, errors.Wrap(
+			errNeedExec,
+			"executory cannot be empty, possible missing options 'WithDefaultExecutor'",
+		)
 	}
 
 	// execute the downstream
