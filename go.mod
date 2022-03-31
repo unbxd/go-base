@@ -11,6 +11,7 @@ require (
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/go-kit/kit v0.9.0
 	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/jcchavezs/porto v0.3.0 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
@@ -31,10 +32,11 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.1 // indirect
-	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
+	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
+	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.7 // indirect
 	google.golang.org/grpc v1.41.0
