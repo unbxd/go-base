@@ -190,6 +190,6 @@ func (c *Consumer) watch() (interface{}, <-chan *driver.Event, error) {
 	case children:
 		return c.zk.WatchChildren(c.path)
 	default:
-		return nil, nil, errors.New(fmt.Sprintf("unknown watchtype %s", c.watchType))
+		return nil, nil, errors.New(fmt.Sprintf("unknown watchtype %v", c.watchType))
 	}
 }
