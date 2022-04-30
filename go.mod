@@ -1,6 +1,6 @@
 module github.com/unbxd/go-base
 
-go 1.12
+go 1.17
 
 require (
 	github.com/DataDog/datadog-go v2.3.0+incompatible
