@@ -157,26 +157,25 @@ func (d *Driver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
 
 	go func(path string, channel chan *driver.Event) {
 		for {
-			select {
-			case event := <-ech:
-				val, _, ech, err = d.conn.GetW(path)
+			event := <-ech
 
-				switch event.Type {
-				case zk.EventNodeCreated:
-					channel <- &driver.Event{Type: driver.EventCreated, P: path, D: val, Err: err}
-				case zk.EventNodeDeleted:
-					channel <- &driver.Event{Type: driver.EventDeleted, P: path, D: val, Err: err}
-				case zk.EventNodeDataChanged:
-					channel <- &driver.Event{Type: driver.EventDataChanged, P: path, D: val, Err: err}
-				case zk.EventNodeChildrenChanged:
-					channel <- &driver.Event{Type: driver.EventChildrenChanged, P: path, D: val, Err: err}
-				}
-
-				if err != nil {
-					close(channel)
-					return
-				}
+			val, _, ech, err = d.conn.GetW(path)
+			if err != nil {
+				close(channel)
+				return
 			}
+
+			switch event.Type {
+			case zk.EventNodeCreated:
+				channel <- &driver.Event{Type: driver.EventCreated, P: path, D: val, Err: err}
+			case zk.EventNodeDeleted:
+				channel <- &driver.Event{Type: driver.EventDeleted, P: path, D: val, Err: err}
+			case zk.EventNodeDataChanged:
+				channel <- &driver.Event{Type: driver.EventDataChanged, P: path, D: val, Err: err}
+			case zk.EventNodeChildrenChanged:
+				channel <- &driver.Event{Type: driver.EventChildrenChanged, P: path, D: val, Err: err}
+			}
+
 		}
 	}(path, channel)
 
@@ -193,27 +192,25 @@ func (d *Driver) WatchChildren(path string) ([]string, <-chan *driver.Event, err
 
 	go func(path string, channel chan *driver.Event) {
 		for {
-			select {
-			case event := <-ech:
-				val, _, ech, err = d.conn.ChildrenW(path)
+			event := <-ech
 
-				// This is done to wrap Zookeeper Events into Driver Events
-				// This will ensure the re-usability of the interface
-				switch event.Type {
-				case zk.EventNodeCreated:
-					channel <- &driver.Event{Type: driver.EventCreated, P: path, D: val}
-				case zk.EventNodeDeleted:
-					channel <- &driver.Event{Type: driver.EventDeleted, P: path, D: val}
-				case zk.EventNodeDataChanged:
-					channel <- &driver.Event{Type: driver.EventDataChanged, P: path, D: val}
-				case zk.EventNodeChildrenChanged: //we will only get this event
-					channel <- &driver.Event{Type: driver.EventChildrenChanged, P: path, D: val}
-				}
+			val, _, ech, err = d.conn.ChildrenW(path)
+			if err != nil {
+				close(channel)
+				return
+			}
 
-				if err != nil {
-					close(channel)
-					return
-				}
+			// This is done to wrap Zookeeper Events into Driver Events
+			// This will ensure the re-usability of the interface
+			switch event.Type {
+			case zk.EventNodeCreated:
+				channel <- &driver.Event{Type: driver.EventCreated, P: path, D: val}
+			case zk.EventNodeDeleted:
+				channel <- &driver.Event{Type: driver.EventDeleted, P: path, D: val}
+			case zk.EventNodeDataChanged:
+				channel <- &driver.Event{Type: driver.EventDataChanged, P: path, D: val}
+			case zk.EventNodeChildrenChanged: //we will only get this event
+				channel <- &driver.Event{Type: driver.EventChildrenChanged, P: path, D: val}
 			}
 		}
 	}(path, channel)

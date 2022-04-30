@@ -64,10 +64,10 @@ func (c *Consumer) Open() error {
 	for {
 		logger.Debug("consumer watching on path")
 
-		connected := c.zk.(*zook.ZookDriver).IsConnected()
+		connected := c.zk.(*zook.Driver).IsConnected()
 		if !connected {
 			c.logger.Error("zook is not connected",
-				log.String("state", c.zk.(*zook.ZookDriver).State().String()))
+				log.String("state", c.zk.(*zook.Driver).State().String()))
 
 			//we need to write a connection state manager for zookeeper to reconnect on disconnects
 			time.Sleep(c.connectionErrDelay)
@@ -82,7 +82,7 @@ func (c *Consumer) Open() error {
 			err == zk.ErrConnectionClosed {
 
 			logger.Error("zook is not connected",
-				log.String("state", c.zk.(*zook.ZookDriver).State().String()),
+				log.String("state", c.zk.(*zook.Driver).State().String()),
 				log.Error(err))
 			time.Sleep(c.connectionErrDelay)
 			continue
