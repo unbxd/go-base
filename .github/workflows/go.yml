@@ -79,5 +79,5 @@ jobs:
         with:
           version: v1.45.2
           working-directory: .
-          args: --enable-all -D varnamelen
+          args: -D varnamelen
           only-new-issues: true
