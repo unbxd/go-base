@@ -193,6 +193,7 @@ func NewDatadogMetrics(opts ...DatadogOption) (Metrics, error) {
 	)
 
 	go func() {
+		//nolint:errcheck
 		dd.logger.Log("[metrics/dd]",
 			"starting backgound sendloop",
 			"address", dd.connstr,

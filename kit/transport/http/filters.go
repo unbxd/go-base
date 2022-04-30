@@ -2,12 +2,13 @@ package http
 
 import (
 	"fmt"
-	"github.com/unbxd/go-base/utils/log"
-	"go.elastic.co/apm/module/apmhttp"
 	net_http "net/http"
 	"runtime"
 	"runtime/debug"
 	"text/template"
+
+	"github.com/unbxd/go-base/utils/log"
+	"go.elastic.co/apm/module/apmhttp"
 )
 
 type Filter func(net_http.Handler) net_http.Handler
@@ -158,6 +159,7 @@ func (t *HTMLPanicFormatter) FormatPanicError(rw net_http.ResponseWriter, r *net
 	if rw.Header().Get("Content-Type") == "" {
 		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	}
+	//nolint:errcheck
 	t.ttl.Execute(rw, infos)
 }
 
