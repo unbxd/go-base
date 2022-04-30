@@ -12,6 +12,7 @@ func defaultErrorFunc(
 	msg kafgo.Message,
 	err error,
 ) {
+	//nolint:forbidigo
 	fmt.Printf(
 		"Reader Err: [Topic: %v] [Partition: %v] [Key: %v] [Error: %v]",
 		msg.Topic,
