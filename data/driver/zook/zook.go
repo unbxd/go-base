@@ -9,21 +9,27 @@ import (
 	"github.com/unbxd/go-base/data/driver"
 )
 
-// ZookDriver defines zookeeper driver for Albus
-type ZookDriver struct {
-	rootDir string
-	servers []string
-	timeout time.Duration
-	conn    *zk.Conn
-	acl     []zk.ACL
-}
+type (
+	// Driver defines zookeeper driver for Albus
+	Driver struct {
+		root    string
+		timeout time.Duration
+		acl     []zk.ACL
 
-func (d *ZookDriver) sanitizeSetup(conn *zk.Conn) error {
-	_, _, err := conn.Get(d.rootDir)
+		servers []string
+
+		conn *zk.Conn
+	}
+
+	DriverOption func(*Driver)
+)
+
+func check(conn *zk.Conn, root string) error {
+	_, _, err := conn.Get(root)
 	switch {
 	case err != nil && (err == zk.ErrInvalidPath || err == zk.ErrNoNode):
 		if _, er := conn.Create(
-			d.rootDir,
+			root,
 			[]byte("Emerge World!!"),
 			int32(0),
 			zk.WorldACL(zk.PermAll),
@@ -37,7 +43,7 @@ func (d *ZookDriver) sanitizeSetup(conn *zk.Conn) error {
 }
 
 // Open initializes the driver
-func (d *ZookDriver) Open() error {
+func (d *Driver) Open() error {
 	// TODO: event channel, check what it does
 	conn, _, err := zk.Connect(d.servers, d.timeout)
 	if err != nil {
@@ -46,11 +52,11 @@ func (d *ZookDriver) Open() error {
 
 	d.conn = conn
 	d.acl = zk.WorldACL(zk.PermAll)
-	// return d.sanitizeSetup()
-	return nil
+
+	return check(d.conn, d.root)
 }
 
-func (d *ZookDriver) makePath(path string) error {
+func (d *Driver) makePath(path string) error {
 	pathSlice := strings.Split(path, "/")
 
 	var cPath = ""
@@ -78,7 +84,7 @@ func (d *ZookDriver) makePath(path string) error {
 }
 
 // Read reads the content from the path and returns the value in bytes
-func (d *ZookDriver) Read(path string) ([]byte, error) {
+func (d *Driver) Read(path string) ([]byte, error) {
 	data, _, err := d.conn.Get(path)
 	if err != nil {
 		return nil, err
@@ -87,7 +93,7 @@ func (d *ZookDriver) Read(path string) ([]byte, error) {
 }
 
 // Write writes the content to the path
-func (d *ZookDriver) Write(path string, data []byte) error {
+func (d *Driver) Write(path string, data []byte) error {
 	_, stat, err := d.conn.Get(path)
 	if err != nil && err == zk.ErrNoNode {
 		err := d.makePath(path)
@@ -107,7 +113,8 @@ func (d *ZookDriver) Write(path string, data []byte) error {
 }
 
 // Children returns the children of the path
-func (d *ZookDriver) Children(path string) ([]string, error) {
+func (d *Driver) Children(path string) ([]string, error) {
+
 	// TODO: _ is acctually an event, see what it does
 	children, _, err := d.conn.Children(path)
 	if err != nil {
@@ -118,7 +125,7 @@ func (d *ZookDriver) Children(path string) ([]string, error) {
 }
 
 // Delete deletes the node and all its children
-func (d *ZookDriver) Delete(path string) error {
+func (d *Driver) Delete(path string) error {
 	children, _, err := d.conn.Children(path)
 	if err != nil {
 		return err
@@ -140,7 +147,7 @@ func (d *ZookDriver) Delete(path string) error {
 }
 
 // Watch watches for changes on node
-func (d *ZookDriver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
+func (d *Driver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
 	var channel = make(chan *driver.Event)
 
 	val, _, ech, err := d.conn.GetW(path)
@@ -149,7 +156,6 @@ func (d *ZookDriver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
 	}
 
 	go func(path string, channel chan *driver.Event) {
-
 		for {
 			select {
 			case event := <-ech:
@@ -177,7 +183,7 @@ func (d *ZookDriver) Watch(path string) ([]byte, <-chan *driver.Event, error) {
 	return val, channel, nil
 }
 
-func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan *driver.Event, error) {
+func (d *Driver) WatchChildren(path string) ([]string, <-chan *driver.Event, error) {
 	var channel = make(chan *driver.Event)
 
 	val, _, ech, err := d.conn.ChildrenW(path)
@@ -186,7 +192,6 @@ func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan *driver.Event,
 	}
 
 	go func(path string, channel chan *driver.Event) {
-
 		for {
 			select {
 			case event := <-ech:
@@ -217,25 +222,50 @@ func (d *ZookDriver) WatchChildren(path string) ([]string, <-chan *driver.Event,
 }
 
 // Close shuts down connection for the driver
-func (d *ZookDriver) Close() error {
+func (d *Driver) Close() error {
 	d.conn.Close()
 	return nil
 }
 
-func (d *ZookDriver) IsConnected() bool {
+func (d *Driver) IsConnected() bool {
 	state := d.conn.State()
 	return state == zk.StateConnected || state == zk.StateHasSession
 }
 
-func (d *ZookDriver) State() zk.State {
+func (d *Driver) State() zk.State {
 	return d.conn.State()
 }
 
-// NewZKDriver returns new zookeeper driver
-func NewZKDriver(servers []string, timeout time.Duration, rootDir string) driver.Driver {
-	return &ZookDriver{
-		servers: servers,
-		timeout: timeout,
-		rootDir: rootDir,
+func WithACL(acl []zk.ACL) DriverOption {
+	return func(d *Driver) {
+		d.acl = acl
 	}
+}
+
+func WithTimeout(timeout time.Duration) DriverOption {
+	return func(d *Driver) {
+		d.timeout = timeout
+	}
+}
+
+func WithRootDirectory(root string) DriverOption {
+	return func(d *Driver) {
+		d.root = root
+	}
+}
+
+// NewZKDriver returns new zookeeper driver
+func NewZKDriver(servers []string, options ...DriverOption) driver.Driver {
+	driver := &Driver{
+		servers: servers,
+		timeout: 18 * time.Second,
+		root:    "/",
+		acl:     zk.WorldACL(zk.PermAll),
+	}
+
+	for _, fn := range options {
+		fn(driver)
+	}
+
+	return driver
 }
