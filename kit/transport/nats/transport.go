@@ -127,12 +127,6 @@ func (tr *Transport) Unsubscribe(id string) error {
 	return nil
 }
 
-func (tr *Transport) Publisher(
-	options ...PublisherOption,
-) (*Publisher, error) {
-	return NewPublisher(tr.conn, options...)
-}
-
 // Open starts the Transport
 func (tr *Transport) Open() error {
 
