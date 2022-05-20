@@ -262,7 +262,7 @@ func (tr *Transport) Open() error {
 		tr.mux.Handler(net_http.MethodGet, mon, net_http.HandlerFunc(
 			func(rw net_http.ResponseWriter, req *net_http.Request) {
 				rw.WriteHeader(net_http.StatusOK)
-				rw.Write([]byte("alive"))
+				rw.Write([]byte("alive")) //nolint:errcheck
 			},
 		))
 	}

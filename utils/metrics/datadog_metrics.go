@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	kitlogger "github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/dogstatsd"
+	kitlogger "github.com/go-kit/log"
 	"github.com/mitchellh/mapstructure"
 	"github.com/unbxd/go-base/utils/log"
 )
@@ -193,12 +193,16 @@ func NewDatadogMetrics(opts ...DatadogOption) (Metrics, error) {
 	)
 
 	go func() {
+		//nolint:errcheck
 		dd.logger.Log("[metrics/dd]",
 			"starting backgound sendloop",
 			"address", dd.connstr,
 		)
+
+		//nolint:staticcheck
 		dd.dstd.SendLoop(
 			context.Background(),
+			//lint:ignore SA1015 using time.Tick leaks the underlying ticker, consider using it only in endless functions, tests and the main package, and use time.NewTicker here
 			time.Tick(dd.tick),
 			"udp",
 			dd.connstr,

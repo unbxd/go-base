@@ -30,8 +30,6 @@ type (
 	handler struct {
 		net_http.Handler
 
-		endpoint endpoint.Endpoint
-
 		befores      []BeforeFunc
 		afters       []AfterFunc
 		encoder      Encoder

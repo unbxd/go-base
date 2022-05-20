@@ -30,14 +30,12 @@ func WithLogger(logger log.Logger) TransportOption {
 //	- DefaultTranceLogger (using transport.Logger)
 func WithFullDefaults() TransportOption {
 	return func(tr *Transport) {
-		for _, opt := range []HandlerOption{
+		tr.options = append(tr.options, []HandlerOption{
 			NewRequestIDHandlerOption("Unbxd-Request-ID"),
 			NewCORSHandlerOption(),
 			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
 			NewTraceLoggerFinalizerHandlerOption(tr.logger),
-		} {
-			tr.options = append(tr.options, opt)
-		}
+		}...)
 	}
 }
 

@@ -190,12 +190,6 @@ func (c *cache) Delete(key string) {
 	}
 }
 
-func (c *cache) print() {
-	for k, v := range c.items {
-		fmt.Println("key:", k, "expired:", v.expired, "expiry:", v.expires, "evict:", v.evicts)
-	}
-}
-
 func (c *cache) MarkExpired() {
 	var expiredItems []keyval
 

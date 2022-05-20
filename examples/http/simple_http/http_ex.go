@@ -9,8 +9,8 @@ import (
 	"math/rand"
 	net_http "net/http"
 
-	"github.com/unbxd/go-base/utils/log"
 	"github.com/unbxd/go-base/kit/transport/http"
+	"github.com/unbxd/go-base/utils/log"
 )
 
 /*
@@ -110,7 +110,6 @@ func main() {
 			ctx context.Context,
 			req *net_http.Request,
 		) (res *net_http.Response, err error) {
-			fmt.Println(req.Header.Values("handlers in order"))
 			return http.NewResponse(
 				req,
 				http.ResponseWithBytes([]byte("hello-world")),

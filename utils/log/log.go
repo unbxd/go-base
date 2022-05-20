@@ -1,7 +1,7 @@
 package log
 
 import (
-	kit_log "github.com/go-kit/kit/log"
+	kit_log "github.com/go-kit/log"
 )
 
 // FieldType defines the type for a field
