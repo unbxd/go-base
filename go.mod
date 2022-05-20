@@ -69,4 +69,5 @@ require (
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	howett.net/plist v1.0.0 // indirect
+	github.com/streadway/amqp v1.0.0
 )
