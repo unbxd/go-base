@@ -10,6 +10,7 @@ jobs:
         uses: actions/dependency-review-action@v1
   build:
     name: Build
+    needs: [review-dependencies]
     runs-on: ubuntu-20.04
     steps:
     - name: Set up Go 1.17
