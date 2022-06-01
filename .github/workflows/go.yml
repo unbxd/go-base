@@ -84,4 +84,3 @@ jobs:
           version: v1.45.2
           working-directory: .
           # args: -D varnamelen
-          only-new-issues: true
