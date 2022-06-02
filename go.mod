@@ -20,6 +20,7 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.15.0
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.46.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -68,6 +69,5 @@ require (
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
 	howett.net/plist v1.0.0 // indirect
 )
