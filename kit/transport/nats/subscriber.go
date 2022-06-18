@@ -48,6 +48,10 @@ type (
 
 		subscription *natn.Subscription
 		options      []kitn.SubscriberOption
+
+		consumerEnabled bool
+		consumerStream  string
+		consumerConfig  *natn.ConsumerConfig
 	}
 
 	// SubscriberOption provides set of options to modify a Subscriber
@@ -149,6 +153,17 @@ func WithErrorhandlerSubscriberOption(e ErrorHandler) SubscriberOption {
 	}
 }
 
+func WithConsumer(stream string, options ...ConsumerOption) SubscriberOption {
+	return func(s *subscriber) {
+		s.consumerEnabled = true
+		s.consumerStream = stream
+		s.consumerConfig = &natn.ConsumerConfig{}
+		for _, fn := range options {
+			fn(s.consumerConfig)
+		}
+	}
+}
+
 func (s *subscriber) open() error {
 
 	var err error
@@ -212,6 +227,24 @@ func newSubscriber(
 
 	if s.errorhn == nil {
 		WithErrorhandlerSubscriberOption(transport.NewLogErrorHandler(logger))
+	}
+
+	if s.consumerEnabled {
+		// Create JetStream context
+		js, err := con.JetStream()
+
+		if err != nil {
+			return nil, errors.Wrap(
+				err, "unable to create JetStream context",
+			)
+		}
+
+		// Create a consumer
+		_, err = js.AddConsumer(s.consumerStream, s.consumerConfig)
+
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create consumer")
+		}
 	}
 
 	s.Subscriber = kitn.NewSubscriber(

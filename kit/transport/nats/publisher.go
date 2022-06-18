@@ -42,6 +42,9 @@ type (
 		errorHandler PublishErrorHandler
 
 		headers natn.Header
+
+		streamEnabled bool
+		streamConfig  *natn.StreamConfig
 	}
 )
 
@@ -105,6 +108,18 @@ func WithPublishHeader(headers natn.Header) PublisherOption {
 	}
 }
 
+func WithStream(stream string, subjects []string, options ...StreamOption) PublisherOption {
+	return func(p *Publisher) {
+		p.streamEnabled = true
+		p.streamConfig.Name = stream
+		p.streamConfig.Subjects = subjects
+
+		for _, fn := range options {
+			fn(p.streamConfig)
+		}
+	}
+}
+
 func defaultPublishMessageEncoder(
 	cx context.Context, subject string, data interface{},
 ) (*natn.Msg, error) {
@@ -138,6 +153,8 @@ func NewPublisher(connstr string, options ...PublisherOption) (*Publisher, error
 			opts:          &opts,
 			name:          "go-base-publisher",
 			subjectPrefix: "gb",
+			streamEnabled: false,
+			streamConfig:  &natn.StreamConfig{},
 			encoder:       defaultPublishMessageEncoder,
 			befores:       []BeforePublish{},
 			afters:        []AfterPublish{},
@@ -156,6 +173,24 @@ func NewPublisher(connstr string, options ...PublisherOption) (*Publisher, error
 		return nil, errors.Wrap(
 			err, "unable to connect to nats server",
 		)
+	}
+
+	if pb.streamEnabled {
+		// Create JetStream context
+		js, err := cc.JetStream()
+
+		if err != nil {
+			return nil, errors.Wrap(
+				err, "unable to create JetStream context",
+			)
+		}
+
+		// Create a Stream
+		_, err = js.AddStream(pb.streamConfig)
+
+		if err != nil && !errors.Is(err, natn.ErrStreamNameAlreadyInUse) {
+			return nil, errors.Wrap(err, "unable to create jetstream")
+		}
 	}
 
 	pb.conn = cc
