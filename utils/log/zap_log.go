@@ -1,7 +1,10 @@
 package log
 
 import (
+	"time"
+
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type (
@@ -119,9 +122,10 @@ func zapLevel(level string) zap.AtomicLevel {
 }
 
 var (
-	defaultLevel    = zap.NewAtomicLevelAt(zap.ErrorLevel)
-	defaultOutputs  = []string{"stdout"}
-	defaultEncoding = "json"
+	defaultLevel     = zap.NewAtomicLevelAt(zap.ErrorLevel)
+	defaultOutputs   = []string{"stdout"}
+	defaultEncoding  = "json"
+	defaultTimestamp = zapcore.TimeEncoderOfLayout(time.RFC3339Nano)
 )
 
 // ZapWithLevel is option to set level for Zap Based Logger
@@ -145,6 +149,13 @@ func ZapWithOutput(outputs []string) ZapLoggerOption {
 	}
 }
 
+//ZapWithTimestampFormat is option to format time stamp for zap based logger
+func ZapWithTimeStampFormat(format string) ZapLoggerOption {
+	return func(zl *zapLogger) {
+		zl.config.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(format)
+	}
+}
+
 // ZapWithAppendedOutput is option to add additional output to list of
 // existing output destination
 func ZapWithAppendedOutput(outputs []string) ZapLoggerOption {
@@ -165,6 +176,7 @@ func NewZapLogger(
 	config.Level = defaultLevel
 	config.OutputPaths = defaultOutputs
 	config.Encoding = defaultEncoding
+	config.EncoderConfig.EncodeTime = defaultTimestamp
 
 	zl := &zapLogger{config: &config}
 
