@@ -29,6 +29,7 @@ func main() {
 	logger, err := log.NewZapLogger(
 		log.ZapWithLevel("debug"),
 		log.ZapWithEncoding("console"),
+		log.ZapWithTimeStampFormat("2006-01-02 15:04:05"),
 	)
 	if err != nil {
 		// throw error in console log
