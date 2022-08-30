@@ -32,11 +32,12 @@ type (
 
 		conn *mqp.Connection
 
-		id       string
-		channel  *mqp.Channel
-		queue    *mqp.Queue
-		q        string
-		exchange string
+		id         string
+		channel    *mqp.Channel
+		queue      *queue
+		exchange   *exchange
+		routingKey string
+		consumer   string
 
 		end      endpoint.Endpoint
 		dec      Decoder
@@ -60,11 +61,11 @@ func (s *subscriber) Id() string {
 }
 
 func (s *subscriber) Queue() string {
-	return s.q
+	return s.queue.name
 }
 
 func (s *subscriber) Exchange() string {
-	return s.exchange
+	return s.exchange.name
 }
 
 func WithId(id string) SubscriberOption {
@@ -73,15 +74,27 @@ func WithId(id string) SubscriberOption {
 	}
 }
 
-func WithQSubscriberOption(q string) SubscriberOption {
+func WithQSubscriberOption(q *queue) SubscriberOption {
 	return func(s *subscriber) {
-		s.q = q
+		s.queue = q
 	}
 }
 
-func WithExchangeSubscriberOption(exchange string) SubscriberOption {
+func WithRoutingKeySubscriberOption(key string) SubscriberOption {
 	return func(s *subscriber) {
-		s.exchange = exchange
+		s.routingKey = key
+	}
+}
+
+func WithExchangeSubscriberOption(e *exchange) SubscriberOption {
+	return func(s *subscriber) {
+		s.exchange = e
+	}
+}
+
+func WithConsumerSubscriberOption(c string) SubscriberOption {
+	return func(s *subscriber) {
+		s.consumer = c
 	}
 }
 
@@ -146,7 +159,6 @@ func WithErrorhandlerSubscriberOption(e ErrorHandler) SubscriberOption {
 	}
 }
 
-//TODO: Check if this works
 func (s *subscriber) open() error {
 	var err error
 
@@ -177,13 +189,13 @@ func newSubscriber(
 		)
 	}
 
-	if s.exchange == "" {
+	if s.exchange == nil {
 		return nil, errors.Wrap(
 			ErrCreatingSubscriber, "missing exchange",
 		)
 	}
 
-	if s.q == "" {
+	if s.queue == nil {
 		return nil, errors.Wrap(
 			ErrCreatingSubscriber, "missing queue",
 		)
@@ -192,6 +204,12 @@ func newSubscriber(
 	if s.dec == nil {
 		return nil, errors.Wrap(
 			ErrCreatingSubscriber, "missing decoder",
+		)
+	}
+
+	if s.routingKey == "" {
+		return nil, errors.Wrap(
+			ErrCreatingSubscriber, "missing routing key",
 		)
 	}
 
@@ -214,41 +232,50 @@ func newSubscriber(
 	s.channel = ch
 
 	err = s.channel.ExchangeDeclare(
-		s.exchange,
-		"fanout",
-		true,
-		false,
-		false,
-		false,
-		nil,
+		s.exchange.name,
+		s.exchange.kind,
+		s.exchange.durable,
+		s.exchange.autoDelete,
+		s.exchange.internal,
+		s.exchange.noWait,
+		s.exchange.args,
 	)
 	if err != nil {
 		return nil, errors.Wrap(ErrCreatingSubscriber, "declaring exchange failed")
 	}
 
 	queue, err := s.channel.QueueDeclare(
-		s.q,
-		true,
-		false,
-		true,
-		false,
-		nil,
+		s.queue.name,
+		s.queue.durable,
+		s.queue.autoDelete,
+		s.queue.exclusive,
+		s.queue.noWait,
+		s.queue.args,
 	)
 	if err != nil {
 		return nil, errors.Wrap(ErrCreatingSubscriber, "declaring queue failed")
 	}
-	s.queue = &queue
 
 	err = s.channel.QueueBind(
 		queue.Name,
-		"",
-		s.exchange,
-		false,
-		nil,
+		s.routingKey,
+		s.exchange.name,
+		s.queue.noWait,
+		s.queue.args,
 	)
 	if err != nil {
 		return nil, errors.Wrap(ErrCreatingSubscriber, "failed to bind a queue")
 	}
+
+	msgs, _ := s.channel.Consume(
+		s.queue.name,
+		s.consumer, // consumer
+		false,      // autoAck
+		false,      // exclusive
+		false,      // noLocal
+		false,      // noWait
+		nil,        // args
+	)
 
 	s.Subscriber = kita.NewSubscriber(
 		kitep.Endpoint(
@@ -258,6 +285,14 @@ func newSubscriber(
 		kita.EncodeResponseFunc(s.reshn),
 		s.options...,
 	)
+
+	listener := s.Subscriber.ServeDelivery(s.channel)
+
+	go func() {
+		for msgDeliv := range msgs {
+			listener(&msgDeliv)
+		}
+	}()
 
 	return &s, nil
 }

@@ -12,5 +12,4 @@ func NoOpResponseHandler(context.Context, *mqp.Publishing, interface{}) error {
 }
 
 func NoOpErrorEncoder(context.Context, error, *mqp.Delivery, kita.Channel, *mqp.Publishing) {
-	return
 }

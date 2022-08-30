@@ -2,7 +2,7 @@ package amqp
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	kita "github.com/go-kit/kit/transport/amqp"
 	"github.com/pkg/errors"
@@ -19,11 +19,10 @@ type (
 
 	Publisher struct {
 		channel   *mqp.Channel
-		q         *mqp.Queue
-		exchange  string
+		key       string
+		exchange  *exchange
 		deliverer kita.Deliverer
 		encoder   Encoder
-		timeout   time.Duration
 	}
 )
 
@@ -39,15 +38,15 @@ func WithDeliverer(d kita.Deliverer) PublisherOption {
 	}
 }
 
-func WithQueue(q *mqp.Queue) PublisherOption {
+func WithRoutingKey(key string) PublisherOption {
 	return func(p *Publisher) {
-		p.q = q
+		p.key = key
 	}
 }
 
-func WithExchange(exchange string) PublisherOption {
+func WithExchange(e *exchange) PublisherOption {
 	return func(p *Publisher) {
-		p.exchange = exchange
+		p.exchange = e
 	}
 }
 
@@ -65,8 +64,12 @@ func NewPublisher(
 		return nil, errors.Wrap(ErrCreatingPublisher, "encoder is nil")
 	}
 
-	if p.exchange == "" {
-		return nil, errors.Wrap(ErrCreatingPublisher, "exchange is empty")
+	if p.exchange == nil {
+		return nil, errors.Wrap(ErrCreatingPublisher, "exchange is nil")
+	}
+
+	if p.key == "" {
+		return nil, errors.Wrap(ErrCreatingPublisher, "routing key is empty")
 	}
 
 	if p.deliverer == nil {
@@ -80,15 +83,16 @@ func NewPublisher(
 	p.channel = ch
 
 	err = p.channel.ExchangeDeclare(
-		p.exchange,
-		"fanout",
-		true,
-		false,
-		false,
-		false,
-		nil,
+		p.exchange.name,
+		p.exchange.kind,
+		p.exchange.durable,
+		p.exchange.autoDelete,
+		p.exchange.internal,
+		p.exchange.noWait,
+		p.exchange.args,
 	)
 	if err != nil {
+		fmt.Println("err", err.Error())
 		return nil, errors.Wrap(ErrCreatingPublisher, "declaring exchange failed")
 	}
 
@@ -96,38 +100,34 @@ func NewPublisher(
 }
 
 // Endpoint returns a usable endpoint that invokes the remote endpoint.
-func (p *Publisher) Endpoint(exchange string) endpoint.Endpoint {
+func (p *Publisher) Endpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return p.publish(ctx, exchange, request)
+		return nil, p.publish(ctx, request)
 	}
 }
 
 //publish to given exchange
 func (p *Publisher) Publish(
 	ctx context.Context,
-	exchange string,
 	request interface{},
 ) error {
-
-	_, err := p.publish(ctx, exchange, request)
-	return err
+	return p.publish(ctx, request)
 }
 
 func (p *Publisher) publish(
 	ctx context.Context,
-	exchange string,
 	request interface{},
-) (interface{}, error) {
+) error {
 	msg := mqp.Publishing{}
 
 	if err := p.encoder(ctx, &msg, request); err != nil {
-		return nil, err
+		return err
 	}
 
-	err := p.channel.Publish(exchange, "", false, false, msg)
+	err := p.channel.Publish(p.exchange.name, p.key, false, false, msg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }

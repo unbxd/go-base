@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/streadway/amqp"
 	mqp "github.com/streadway/amqp"
 	"github.com/unbxd/go-base/utils/log"
 )
@@ -187,7 +186,7 @@ func NewTransport(
 
 	go func() {
 		for {
-			_, ok := <-tr.conn.NotifyClose(make(chan *amqp.Error))
+			_, ok := <-tr.conn.NotifyClose(make(chan *mqp.Error))
 			// exit this goroutine if closed by developer
 			if !ok {
 				break
