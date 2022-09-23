@@ -1,6 +1,6 @@
 module github.com/unbxd/go-base
 
-go 1.16
+go 1.17
 
 require (
 	github.com/DataDog/datadog-go v4.8.3+incompatible
@@ -45,4 +45,30 @@ require (
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	howett.net/plist v1.0.0 // indirect
+)
+
+require (
+	github.com/VividCortex/gohistogram v1.0.0 // indirect
+	github.com/armon/go-radix v1.0.0 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cactus/go-statsd-client/statsd v0.0.0-20190922113730-52b467de415c // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/nats-io/nkeys v0.3.0 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/pierrec/lz4/v4 v4.1.14 // indirect
+	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/santhosh-tekuri/jsonschema v1.2.4 // indirect
+	github.com/smartystreets/goconvey v1.6.4 // indirect
+	go.elastic.co/apm v1.15.0 // indirect
+	go.elastic.co/fastjson v1.1.0 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 )
