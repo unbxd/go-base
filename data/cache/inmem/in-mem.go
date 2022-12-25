@@ -2,6 +2,7 @@
 package inmem
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -84,7 +85,7 @@ func (c *cache) delete(k string) (interface{}, bool) {
 }
 
 // Adds the item to cache replacing existing one
-func (c *cache) Set(k string, val interface{}) {
+func (c *cache) Set(_ context.Context, k string, val interface{}) {
 	c.mutex.Lock()
 	c.set(k, val)
 	// c.print()
@@ -93,7 +94,7 @@ func (c *cache) Set(k string, val interface{}) {
 
 // Add an item to the cache only if an item doesn't exist for the given key
 // or if the existing item has expired. Returns error otherwise
-func (c *cache) Add(k string, val interface{}) error {
+func (c *cache) Add(_ context.Context, k string, val interface{}) error {
 	c.mutex.Lock()
 	_, found := c.get(k)
 	if found {
@@ -107,7 +108,7 @@ func (c *cache) Add(k string, val interface{}) error {
 }
 
 // Replace item if it exists
-func (c *cache) Replace(k string, val interface{}) error {
+func (c *cache) Replace(_ context.Context, k string, val interface{}) error {
 	c.mutex.Lock()
 	_, found := c.get(k)
 	if !found {
@@ -132,6 +133,7 @@ func (c *cache) set(k string, val interface{}) {
 }
 
 func (c *cache) SetWithDuration(
+	_ context.Context,
 	k string,
 	val interface{},
 	expiration time.Duration,
@@ -160,7 +162,7 @@ func (c *cache) get(k string) (interface{}, bool) {
 	return item.object, true
 }
 
-func (c *cache) Get(k string) (interface{}, bool) {
+func (c *cache) Get(_ context.Context, k string) (interface{}, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -180,7 +182,7 @@ func (c *cache) GetItem(k string) (*item, bool) {
 	return item, found
 }
 
-func (c *cache) Delete(key string) {
+func (c *cache) Delete(_ context.Context, key string) {
 	c.mutex.Lock()
 	v, evicted := c.delete(key)
 	c.mutex.Unlock()
