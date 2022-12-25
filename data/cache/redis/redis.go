@@ -191,7 +191,6 @@ func (c *cache) Get(cx context.Context, key string) (val interface{}, found bool
 	err = strcmd.Err()
 
 	if err != nil {
-
 		c.logger.Error(
 			"failed to get data from redis",
 			log.String("key", key),
@@ -258,7 +257,7 @@ func NewRedisCache(
 		Addr: addr,
 	}
 
-	ch := &cache{opt: opt, cc: nil}
+	ch := &cache{logger: logger, opt: opt, cc: nil}
 
 	for _, fn := range options {
 		fn(ch)
