@@ -9,7 +9,6 @@ package redis
 
 import (
 	"context"
-	"encoding"
 	"fmt"
 	"time"
 
@@ -27,14 +26,7 @@ type (
 		cc *redis.Client
 	}
 
-	Cache struct{ *cache }
-
 	Option func(*cache)
-
-	Marshaler interface {
-		encoding.BinaryMarshaler
-		encoding.BinaryUnmarshaler
-	}
 )
 
 func (c *cache) set(
@@ -190,8 +182,11 @@ func (c *cache) Get(cx context.Context, key string) (val interface{}, found bool
 	strcmd = c.cc.Get(cx, key)
 	err = strcmd.Err()
 
-	if err != nil {
+	if err != nil && err == redis.Nil {
+		return nil, false
+	}
 
+	if err != nil {
 		c.logger.Error(
 			"failed to get data from redis",
 			log.String("key", key),
@@ -249,6 +244,8 @@ func WithOnConnect(callback func(context.Context, *redis.Conn) error) Option {
 	}
 }
 
+type Cache struct{ *cache }
+
 func NewRedisCache(
 	logger log.Logger,
 	addr string,
@@ -258,7 +255,7 @@ func NewRedisCache(
 		Addr: addr,
 	}
 
-	ch := &cache{opt: opt, cc: nil}
+	ch := &cache{logger: logger, opt: opt, cc: nil}
 
 	for _, fn := range options {
 		fn(ch)
