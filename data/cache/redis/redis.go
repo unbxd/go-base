@@ -32,15 +32,10 @@ type (
 func (c *cache) set(
 	cx context.Context,
 	key string,
-	val interface{},
+	val []byte,
 	duration time.Duration,
 ) error {
 	var err error
-
-	_, ok := val.([]byte)
-	if !ok {
-		return fmt.Errorf("cache/redis only supports []byte as value")
-	}
 
 	stcmd := c.cc.Set(cx, key, val, NOEXPIRE)
 	err = stcmd.Err()
@@ -48,7 +43,7 @@ func (c *cache) set(
 	return err
 }
 
-func (c *cache) Set(cx context.Context, key string, val interface{}) {
+func (c *cache) Set(cx context.Context, key string, val []byte) {
 	if err := c.set(cx, key, val, 365*24*time.Hour); err != nil {
 		c.logger.Error(
 			"failed to write to redis",
@@ -79,7 +74,7 @@ func (c *cache) exists(cx context.Context, key string) (bool, error) {
 func (c *cache) Add(
 	cx context.Context,
 	key string,
-	value interface{},
+	value []byte,
 ) error {
 	exists, err := c.exists(cx, key)
 	if err != nil {
@@ -130,7 +125,7 @@ func (c *cache) delete(
 func (c *cache) Replace(
 	cx context.Context,
 	key string,
-	value interface{},
+	value []byte,
 ) error {
 	exists, err := c.exists(cx, key)
 	if err != nil {
@@ -159,7 +154,7 @@ func (c *cache) Replace(
 func (c *cache) SetWithDuration(
 	cx context.Context,
 	key string,
-	val interface{},
+	val []byte,
 	expiration time.Duration,
 ) {
 	err := c.set(cx, key, val, expiration)
@@ -173,7 +168,7 @@ func (c *cache) SetWithDuration(
 	}
 }
 
-func (c *cache) Get(cx context.Context, key string) (val interface{}, found bool) {
+func (c *cache) Get(cx context.Context, key string) (val []byte, found bool) {
 	var (
 		strcmd *redis.StringCmd
 		err    error

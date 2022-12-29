@@ -12,7 +12,7 @@ import (
 type (
 	item struct {
 		expired bool
-		object  interface{}
+		object  []byte
 		expires int64
 		evicts  int64
 	}
@@ -28,20 +28,20 @@ type (
 		eviction   time.Duration
 		items      map[string]*item
 		mutex      sync.RWMutex
-		onExpired  func(string, interface{})
-		onEvicted  func(string, interface{})
+		onExpired  func(string, []byte)
+		onEvicted  func(string, []byte)
 		janitor    *janitor
 	}
 
 	keyval struct {
 		key   string
-		value interface{}
+		value []byte
 	}
 
 	Option func(*cache)
 )
 
-func (i *item) Value() interface{} { return i.object }
+func (i *item) Value() []byte      { return i.object }
 func (i *item) Expired() bool      { return i.expired }
 func (i *item) Expires() time.Time { return time.Unix(0, i.expires) }
 func (i *item) Evicts() time.Time  { return time.Unix(0, i.evicts) }
@@ -72,7 +72,7 @@ func (c *cache) Flush() {
 
 // Returns the object value stored and if it is found
 // This method is not thread safe
-func (c *cache) delete(k string) (interface{}, bool) {
+func (c *cache) delete(k string) ([]byte, bool) {
 	if c.onEvicted != nil {
 		if v, found := c.items[k]; found {
 			delete(c.items, k)
@@ -85,7 +85,7 @@ func (c *cache) delete(k string) (interface{}, bool) {
 }
 
 // Adds the item to cache replacing existing one
-func (c *cache) Set(_ context.Context, k string, val interface{}) {
+func (c *cache) Set(_ context.Context, k string, val []byte) {
 	c.mutex.Lock()
 	c.set(k, val)
 	// c.print()
@@ -94,7 +94,7 @@ func (c *cache) Set(_ context.Context, k string, val interface{}) {
 
 // Add an item to the cache only if an item doesn't exist for the given key
 // or if the existing item has expired. Returns error otherwise
-func (c *cache) Add(_ context.Context, k string, val interface{}) error {
+func (c *cache) Add(_ context.Context, k string, val []byte) error {
 	c.mutex.Lock()
 	_, found := c.get(k)
 	if found {
@@ -108,7 +108,7 @@ func (c *cache) Add(_ context.Context, k string, val interface{}) error {
 }
 
 // Replace item if it exists
-func (c *cache) Replace(_ context.Context, k string, val interface{}) error {
+func (c *cache) Replace(_ context.Context, k string, val []byte) error {
 	c.mutex.Lock()
 	_, found := c.get(k)
 	if !found {
@@ -121,7 +121,7 @@ func (c *cache) Replace(_ context.Context, k string, val interface{}) error {
 	return nil
 }
 
-func (c *cache) set(k string, val interface{}) {
+func (c *cache) set(k string, val []byte) {
 	expires := time.Now().Add(c.expiration)
 	evicts := expires.Add(c.eviction)
 	c.items[k] = &item{
@@ -135,7 +135,7 @@ func (c *cache) set(k string, val interface{}) {
 func (c *cache) SetWithDuration(
 	_ context.Context,
 	k string,
-	val interface{},
+	val []byte,
 	expiration time.Duration,
 ) {
 	expires := time.Now().Add(expiration)
@@ -152,7 +152,7 @@ func (c *cache) SetWithDuration(
 }
 
 // get retrieves the item from cache, but is not thread safe
-func (c *cache) get(k string) (interface{}, bool) {
+func (c *cache) get(k string) ([]byte, bool) {
 	item, found := c.items[k]
 
 	if !found || item.expired {
@@ -162,7 +162,7 @@ func (c *cache) get(k string) (interface{}, bool) {
 	return item.object, true
 }
 
-func (c *cache) Get(_ context.Context, k string) (interface{}, bool) {
+func (c *cache) Get(_ context.Context, k string) ([]byte, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -270,13 +270,13 @@ func (c *cache) Items() map[string]*item {
 	return m
 }
 
-func (c *cache) OnExpired(fn func(string, interface{})) {
+func (c *cache) OnExpired(fn func(string, []byte)) {
 	c.mutex.Lock()
 	c.onExpired = fn
 	c.mutex.Unlock()
 }
 
-func (c *cache) OnEvicted(fn func(string, interface{})) {
+func (c *cache) OnEvicted(fn func(string, []byte)) {
 	c.mutex.Lock()
 	c.onEvicted = fn
 	c.mutex.Unlock()
@@ -340,13 +340,13 @@ var (
 	defaultEvictTicker  = time.Duration(5) * time.Minute
 )
 
-func WithOnEvictCallback(fn func(k string, val interface{})) Option {
+func WithOnEvictCallback(fn func(k string, val []byte)) Option {
 	return func(c *cache) {
 		c.onEvicted = fn
 	}
 }
 
-func WithOnExpiredCallback(fn func(k string, val interface{})) Option {
+func WithOnExpiredCallback(fn func(k string, val []byte)) Option {
 	return func(c *cache) {
 		c.onExpired = fn
 	}

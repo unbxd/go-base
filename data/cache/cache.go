@@ -14,7 +14,7 @@ type Cache interface {
 	Set(
 		cx context.Context,
 		kye string,
-		val interface{},
+		val []byte,
 	)
 
 	// Add adds item to cache only if the item doesn't exist or
@@ -22,21 +22,21 @@ type Cache interface {
 	Add(
 		cx context.Context,
 		key string,
-		val interface{},
+		val []byte,
 	) error
 
 	// Replace an item if it exists
 	Replace(
 		cx context.Context,
 		key string,
-		val interface{},
+		val []byte,
 	) error
 
 	// SetWithDuration sets the key with a value for a time period
 	SetWithDuration(
 		cx context.Context,
 		key string,
-		val interface{},
+		val []byte,
 		expiration time.Duration,
 	)
 
@@ -45,7 +45,7 @@ type Cache interface {
 	Get(
 		cx context.Context,
 		key string,
-	) (val interface{}, found bool)
+	) (val []byte, found bool)
 
 	// Delete deletes the key from the cache, and doesn't do anything
 	// if key is not found
