@@ -198,6 +198,11 @@ func newDefaultEncoder() Encoder {
 			panic("status code should be non-negative")
 		}
 
+		defer func() {
+			rr.Body.Close()
+			rr.Close = true
+		}()
+
 		return copyResponse(bufferPool, rw, rr.Body, flushInterval(rr))
 	}
 }
