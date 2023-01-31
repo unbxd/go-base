@@ -64,7 +64,6 @@ func WithSubject(subject string) Option {
 // relies on NATS to publish the events.
 // Any future implementation should name itself as `New<type>Notifier`
 func NewNotifier(
-	connstr string,
 	subject string,
 	options ...Option,
 ) (Notifier, error) {
