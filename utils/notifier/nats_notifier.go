@@ -12,6 +12,7 @@ import (
 
 type (
 	natsNotifier struct {
+		subject string
 		options natn.Options
 		conn    *natn.Conn
 		prefix  string
@@ -23,7 +24,6 @@ type (
 
 func (nn *natsNotifier) Notify(
 	cx context.Context,
-	subject string,
 	data interface{},
 ) error {
 	var buff bytes.Buffer
@@ -35,7 +35,7 @@ func (nn *natsNotifier) Notify(
 	}
 
 	return nn.conn.Publish(
-		fmt.Sprintf("%s.%s", nn.prefix, subject),
+		fmt.Sprintf("%s.%s", nn.prefix, nn.subject),
 		buff.Bytes(),
 	)
 }
@@ -56,17 +56,23 @@ func WithName(name string) Option {
 	return func(nn *natsNotifier) { nn.name = name }
 }
 
+func WithSubject(subject string) Option {
+	return func(nn *natsNotifier) { nn.subject = subject }
+}
+
 // NewNotifier returns a default implementation of Notifier, which
 // relies on NATS to publish the events.
 // Any future implementation should name itself as `New<type>Notifier`
 func NewNotifier(
 	connstr string,
+	subject string,
 	options ...Option,
 ) (Notifier, error) {
 	nn := &natsNotifier{
 		options: natn.GetDefaultOptions(),
 		prefix:  "gobase",
 		name:    "natsNotifier",
+		subject: subject,
 	}
 
 	for _, o := range options {
