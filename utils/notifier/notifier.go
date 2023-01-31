@@ -34,9 +34,7 @@ type (
 		// Notify publishes data to the notifier
 		// after decorating it with additional details
 		Notify(
-			cx context.Context,
-			subject string,
-			data interface{},
+			cx context.Context, data interface{},
 		) error
 	}
 )
