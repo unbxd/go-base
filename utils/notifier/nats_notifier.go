@@ -1,20 +1,20 @@
 package notifier
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 
 	natn "github.com/nats-io/nats.go"
+
 	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/kit/transport/nats"
 )
 
 type (
 	natsNotifier struct {
+		*nats.Publisher
+		opts    []nats.PublisherOption
 		subject string
-		options natn.Options
-		conn    *natn.Conn
 		prefix  string
 		name    string
 	}
@@ -26,26 +26,11 @@ func (nn *natsNotifier) Notify(
 	cx context.Context,
 	data interface{},
 ) error {
-	var buff bytes.Buffer
-
-	// serialize it
-	err := json.NewEncoder(&buff).Encode(newEvent(nn.name, data))
-	if err != nil {
-		return errors.Wrap(err, "failed to encode data to json")
-	}
-
-	return nn.conn.Publish(
+	return nn.Publish(
+		cx,
 		fmt.Sprintf("%s.%s", nn.prefix, nn.subject),
-		buff.Bytes(),
+		data,
 	)
-}
-
-func WithDefaultOptions() Option {
-	return func(nn *natsNotifier) { nn.options = natn.GetDefaultOptions() }
-}
-
-func WithCustomOptions(options natn.Options) Option {
-	return func(nn *natsNotifier) { nn.options = options }
 }
 
 func WithSubjectPrefix(prefix string) Option {
@@ -60,17 +45,26 @@ func WithSubject(subject string) Option {
 	return func(nn *natsNotifier) { nn.subject = subject }
 }
 
+func WithMessageEncoder(
+	fn func(cx context.Context, sub string, data interface{}) (*natn.Msg, error),
+) Option {
+	return func(p *natsNotifier) {
+		p.opts = append(p.opts,
+			nats.WithPublishMessageEncoder(fn),
+		)
+	}
+}
+
 // NewNotifier returns a default implementation of Notifier, which
 // relies on NATS to publish the events.
 // Any future implementation should name itself as `New<type>Notifier`
 func NewNotifier(
+	connstr string,
 	subject string,
 	options ...Option,
 ) (Notifier, error) {
+
 	nn := &natsNotifier{
-		options: natn.GetDefaultOptions(),
-		prefix:  "gobase",
-		name:    "natsNotifier",
 		subject: subject,
 	}
 
@@ -78,12 +72,11 @@ func NewNotifier(
 		o(nn)
 	}
 
-	cc, err := nn.options.Connect()
+	pub, err := nats.NewPublisher(connstr, nn.opts...)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect nats")
+		return nil, errors.Wrap(err, "failed to create publisher")
 	}
-
-	nn.conn = cc
+	nn.Publisher = pub
 
 	return nn, nil
 }
