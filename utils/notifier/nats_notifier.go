@@ -2,55 +2,71 @@ package notifier
 
 import (
 	"context"
-	"fmt"
-
-	natn "github.com/nats-io/nats.go"
 
 	"github.com/pkg/errors"
 	"github.com/unbxd/go-base/kit/transport/nats"
 )
 
 type (
-	natsNotifier struct {
-		*nats.Publisher
-		opts    []nats.PublisherOption
-		subject string
-		prefix  string
-		name    string
+	writer interface {
+		Write(cx context.Context, subject string, data interface{}) error
 	}
 
-	Option func(*natsNotifier)
+	defaultWriter struct{ *natsNotifier }
+)
+
+func (dw *defaultWriter) Write(
+	cx context.Context,
+	sub string,
+	data interface{},
+) error {
+	return dw.Publish(cx, sub, data)
+}
+
+func newDefaultWriter(nn *natsNotifier) writer { return &defaultWriter{nn} }
+
+type (
+	Option  func(*natsNotifier)
+	Encoder nats.PublishMessageEncoder
+
+	natsNotifier struct {
+		*nats.Publisher
+
+		writer writer
+
+		opts    []nats.PublisherOption
+		subject string
+	}
 )
 
 func (nn *natsNotifier) Notify(
-	cx context.Context,
-	data interface{},
+	cx context.Context, data interface{},
 ) error {
-	return nn.Publish(
+	return nn.writer.Write(
 		cx,
-		fmt.Sprintf("%s.%s", nn.prefix, nn.subject),
+		nn.subject,
 		data,
 	)
 }
 
+// Options
+
 func WithSubjectPrefix(prefix string) Option {
-	return func(nn *natsNotifier) { nn.prefix = prefix }
+	return func(nn *natsNotifier) {
+		nn.opts = append(
+			nn.opts,
+			nats.WithPublisherSubjectPrefix(prefix),
+		)
+	}
 }
 
-func WithName(name string) Option {
-	return func(nn *natsNotifier) { nn.name = name }
-}
-
-func WithSubject(subject string) Option {
-	return func(nn *natsNotifier) { nn.subject = subject }
-}
-
-func WithMessageEncoder(
-	fn func(cx context.Context, sub string, data interface{}) (*natn.Msg, error),
-) Option {
+func WithMessageEncoder(fn Encoder) Option {
 	return func(p *natsNotifier) {
-		p.opts = append(p.opts,
-			nats.WithPublishMessageEncoder(fn),
+		p.opts = append(
+			p.opts,
+			nats.WithPublishMessageEncoder(
+				nats.PublishMessageEncoder(fn),
+			),
 		)
 	}
 }
@@ -63,20 +79,28 @@ func NewNotifier(
 	subject string,
 	options ...Option,
 ) (Notifier, error) {
+	var nn *natsNotifier
 
-	nn := &natsNotifier{
+	nn = &natsNotifier{
 		subject: subject,
+		writer:  newDefaultWriter(nn),
 	}
 
-	for _, o := range options {
-		o(nn)
+	for _, fn := range options {
+		fn(nn)
 	}
 
-	pub, err := nats.NewPublisher(connstr, nn.opts...)
+	pub, err := nats.NewPublisher(
+		connstr, nn.opts...,
+	)
+
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create publisher")
+		return nil, errors.Wrap(
+			err,
+			"failed to create publisher",
+		)
 	}
-	nn.Publisher = pub
 
+	nn.Publisher = pub
 	return nn, nil
 }
