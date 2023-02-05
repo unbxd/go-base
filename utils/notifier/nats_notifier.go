@@ -2,28 +2,135 @@ package notifier
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/unbxd/go-base/kit/transport/nats"
+	"github.com/unbxd/go-base/utils/log"
 )
 
 type (
 	writer interface {
-		Write(cx context.Context, subject string, data interface{}) error
+		Write(cx context.Context, data interface{}) error
 	}
 
 	defaultWriter struct{ *natsNotifier }
+
+	bufferedWriter struct {
+		*natsNotifier
+
+		logger log.Logger
+
+		buffer []interface{}
+
+		mu sync.Mutex
+	}
 )
 
-func (dw *defaultWriter) Write(
-	cx context.Context,
-	sub string,
-	data interface{},
-) error {
-	return dw.Publish(cx, sub, data)
+// Default Writer
+func (dw *defaultWriter) Write(cx context.Context, data interface{}) error {
+	return dw.Publish(cx, dw.natsNotifier.subject, data)
 }
 
 func newDefaultWriter(nn *natsNotifier) writer { return &defaultWriter{nn} }
+
+// Write writes the data to the buffer
+func (bw *bufferedWriter) Write(cx context.Context, data interface{}) (err error) {
+	bw.mu.Lock()
+	bw.buffer = append(bw.buffer, data)
+	bw.mu.Unlock()
+	return
+}
+
+// Producer runs periodically and dumps all the events on the returned channel
+func (bw *bufferedWriter) Producer(
+	periodicity time.Duration,
+	done <-chan struct{},
+) (<-chan interface{}, chan error) {
+	// create channel for generating data
+	var (
+		datas = make(chan interface{})
+		errch = make(chan error)
+		timer = time.NewTimer(periodicity)
+	)
+
+	go func() {
+		for {
+			select {
+			case <-timer.C:
+				// perform operation of reading the buffer
+				// and writing the data from buffer in channel
+				bw.mu.Lock()
+				newBuffer := make([]interface{}, len(bw.buffer))
+				copy(newBuffer, bw.buffer)
+				bw.buffer = nil
+				bw.mu.Unlock() // release lock as soon as possible
+
+				// iterate over newBuffer and emit on channel
+				for _, data := range newBuffer {
+					datas <- data
+				}
+			case err := <-errch:
+				// error recieved from worker
+				bw.logger.Error(
+					"Got error from Worker:",
+					log.String("error", err.Error()),
+					log.Error(err),
+				)
+			case <-done:
+				close(datas)
+				close(errch)
+				return
+			}
+		}
+	}()
+	return datas, errch
+}
+
+// Buffered Writer
+func (bw *bufferedWriter) Worker(
+	done <-chan struct{},
+	datas <-chan interface{},
+	errch chan<- error,
+) {
+	for data := range datas {
+		cx := context.Background()
+		err := bw.Publish(cx, bw.subject, data)
+		select {
+		case errch <- err:
+		case <-done:
+			return
+		}
+	}
+}
+
+func newBufferedWriter(
+	logger log.Logger,
+	bufferSize int,
+	parallelism int,
+	periodicity time.Duration,
+	nn *natsNotifier,
+) writer {
+
+	done := make(chan struct{})
+	// start producer
+	bw := &bufferedWriter{
+		natsNotifier: nn,
+		logger:       logger,
+		buffer:       make([]interface{}, bufferSize),
+	}
+
+	datach, errch := bw.Producer(periodicity, done)
+
+	for i := 0; i < parallelism; i++ {
+		go func() {
+			bw.Worker(done, datach, errch)
+		}()
+	}
+
+	return bw
+}
 
 type (
 	Option  func(*natsNotifier)
@@ -45,7 +152,6 @@ func (nn *natsNotifier) Notify(
 	return nn.writer.Write(
 		cx,
 		nn.subject,
-		data,
 	)
 }
 
@@ -67,6 +173,19 @@ func WithMessageEncoder(fn Encoder) Option {
 			nats.WithPublishMessageEncoder(
 				nats.PublishMessageEncoder(fn),
 			),
+		)
+	}
+}
+
+func WithBufferedWriter(
+	logger log.Logger,
+	bufferSize int,
+	parallelism int,
+	periodicity time.Duration,
+) Option {
+	return func(nn *natsNotifier) {
+		nn.writer = newBufferedWriter(
+			logger, bufferSize, parallelism, periodicity, nn,
 		)
 	}
 }
