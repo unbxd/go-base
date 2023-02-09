@@ -50,15 +50,15 @@ func (bw *bufferedWriter) Producer(
 ) (<-chan interface{}, chan error) {
 	// create channel for generating data
 	var (
-		datas = make(chan interface{})
-		errch = make(chan error)
-		timer = time.NewTimer(periodicity)
+		datas  = make(chan interface{})
+		errch  = make(chan error)
+		ticker = time.NewTicker(periodicity)
 	)
 
 	go func() {
 		for {
 			select {
-			case <-timer.C:
+			case <-ticker.C:
 				// perform operation of reading the buffer
 				// and writing the data from buffer in channel
 				bw.mu.Lock()
@@ -94,15 +94,21 @@ func (bw *bufferedWriter) Worker(
 	datas <-chan interface{},
 	errch chan<- error,
 ) {
-	for data := range datas {
-		cx := context.Background()
-		err := bw.Publish(cx, bw.subject, data)
-		select {
-		case errch <- err:
-		case <-done:
-			return
+	go func() {
+		for {
+			select {
+			case data := <-datas:
+				cx := context.Background()
+				err := bw.Publish(cx, bw.subject, data)
+				if err != nil {
+					errch <- err
+				}
+			case <-done:
+				return
+			}
+
 		}
-	}
+	}()
 }
 
 func newBufferedWriter(
@@ -118,7 +124,7 @@ func newBufferedWriter(
 	bw := &bufferedWriter{
 		natsNotifier: nn,
 		logger:       logger,
-		buffer:       make([]interface{}, bufferSize),
+		buffer:       make([]interface{}, 0),
 	}
 
 	datach, errch := bw.Producer(periodicity, done)
@@ -151,7 +157,7 @@ func (nn *natsNotifier) Notify(
 ) error {
 	return nn.writer.Write(
 		cx,
-		nn.subject,
+		data,
 	)
 }
 
