@@ -2,55 +2,190 @@ package notifier
 
 import (
 	"context"
-	"fmt"
-
-	natn "github.com/nats-io/nats.go"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/unbxd/go-base/kit/transport/nats"
+	"github.com/unbxd/go-base/utils/log"
 )
 
 type (
-	natsNotifier struct {
-		*nats.Publisher
-		opts    []nats.PublisherOption
-		subject string
-		prefix  string
-		name    string
+	writer interface {
+		Write(cx context.Context, data interface{}) error
 	}
 
-	Option func(*natsNotifier)
+	defaultWriter struct{ *natsNotifier }
+
+	bufferedWriter struct {
+		*natsNotifier
+
+		logger log.Logger
+
+		buffer []interface{}
+
+		mu sync.Mutex
+	}
+)
+
+// Default Writer
+func (dw *defaultWriter) Write(cx context.Context, data interface{}) error {
+	return dw.Publish(cx, dw.natsNotifier.subject, data)
+}
+
+func newDefaultWriter(nn *natsNotifier) writer { return &defaultWriter{nn} }
+
+// Write writes the data to the buffer
+func (bw *bufferedWriter) Write(cx context.Context, data interface{}) (err error) {
+	bw.mu.Lock()
+	bw.buffer = append(bw.buffer, data)
+	bw.mu.Unlock()
+	return
+}
+
+// Producer runs periodically and dumps all the events on the returned channel
+func (bw *bufferedWriter) Producer(
+	periodicity time.Duration,
+	done <-chan struct{},
+) (<-chan interface{}, chan error) {
+	// create channel for generating data
+	var (
+		datas = make(chan interface{})
+		errch = make(chan error)
+		timer = time.NewTimer(periodicity)
+	)
+
+	go func() {
+		for {
+			select {
+			case <-timer.C:
+				// perform operation of reading the buffer
+				// and writing the data from buffer in channel
+				bw.mu.Lock()
+				newBuffer := make([]interface{}, len(bw.buffer))
+				copy(newBuffer, bw.buffer)
+				bw.buffer = nil
+				bw.mu.Unlock() // release lock as soon as possible
+
+				// iterate over newBuffer and emit on channel
+				for _, data := range newBuffer {
+					datas <- data
+				}
+			case err := <-errch:
+				// error recieved from worker
+				bw.logger.Error(
+					"Got error from Worker:",
+					log.String("error", err.Error()),
+					log.Error(err),
+				)
+			case <-done:
+				close(datas)
+				close(errch)
+				return
+			}
+		}
+	}()
+	return datas, errch
+}
+
+// Buffered Writer
+func (bw *bufferedWriter) Worker(
+	done <-chan struct{},
+	datas <-chan interface{},
+	errch chan<- error,
+) {
+	for data := range datas {
+		cx := context.Background()
+		err := bw.Publish(cx, bw.subject, data)
+		select {
+		case errch <- err:
+		case <-done:
+			return
+		}
+	}
+}
+
+func newBufferedWriter(
+	logger log.Logger,
+	bufferSize int,
+	parallelism int,
+	periodicity time.Duration,
+	nn *natsNotifier,
+) writer {
+
+	done := make(chan struct{})
+	// start producer
+	bw := &bufferedWriter{
+		natsNotifier: nn,
+		logger:       logger,
+		buffer:       make([]interface{}, bufferSize),
+	}
+
+	datach, errch := bw.Producer(periodicity, done)
+
+	for i := 0; i < parallelism; i++ {
+		go func() {
+			bw.Worker(done, datach, errch)
+		}()
+	}
+
+	return bw
+}
+
+type (
+	Option  func(*natsNotifier)
+	Encoder nats.PublishMessageEncoder
+
+	natsNotifier struct {
+		*nats.Publisher
+
+		writer writer
+
+		opts    []nats.PublisherOption
+		subject string
+	}
 )
 
 func (nn *natsNotifier) Notify(
-	cx context.Context,
-	data interface{},
+	cx context.Context, data interface{},
 ) error {
-	return nn.Publish(
+	return nn.writer.Write(
 		cx,
-		fmt.Sprintf("%s.%s", nn.prefix, nn.subject),
-		data,
+		nn.subject,
 	)
 }
 
+// Options
+
 func WithSubjectPrefix(prefix string) Option {
-	return func(nn *natsNotifier) { nn.prefix = prefix }
+	return func(nn *natsNotifier) {
+		nn.opts = append(
+			nn.opts,
+			nats.WithPublisherSubjectPrefix(prefix),
+		)
+	}
 }
 
-func WithName(name string) Option {
-	return func(nn *natsNotifier) { nn.name = name }
-}
-
-func WithSubject(subject string) Option {
-	return func(nn *natsNotifier) { nn.subject = subject }
-}
-
-func WithMessageEncoder(
-	fn func(cx context.Context, sub string, data interface{}) (*natn.Msg, error),
-) Option {
+func WithMessageEncoder(fn Encoder) Option {
 	return func(p *natsNotifier) {
-		p.opts = append(p.opts,
-			nats.WithPublishMessageEncoder(fn),
+		p.opts = append(
+			p.opts,
+			nats.WithPublishMessageEncoder(
+				nats.PublishMessageEncoder(fn),
+			),
+		)
+	}
+}
+
+func WithBufferedWriter(
+	logger log.Logger,
+	bufferSize int,
+	parallelism int,
+	periodicity time.Duration,
+) Option {
+	return func(nn *natsNotifier) {
+		nn.writer = newBufferedWriter(
+			logger, bufferSize, parallelism, periodicity, nn,
 		)
 	}
 }
@@ -63,20 +198,28 @@ func NewNotifier(
 	subject string,
 	options ...Option,
 ) (Notifier, error) {
+	var nn *natsNotifier
 
-	nn := &natsNotifier{
+	nn = &natsNotifier{
 		subject: subject,
+		writer:  newDefaultWriter(nn),
 	}
 
-	for _, o := range options {
-		o(nn)
+	for _, fn := range options {
+		fn(nn)
 	}
 
-	pub, err := nats.NewPublisher(connstr, nn.opts...)
+	pub, err := nats.NewPublisher(
+		connstr, nn.opts...,
+	)
+
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create publisher")
+		return nil, errors.Wrap(
+			err,
+			"failed to create publisher",
+		)
 	}
-	nn.Publisher = pub
 
+	nn.Publisher = pub
 	return nn, nil
 }

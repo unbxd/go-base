@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	natn "github.com/nats-io/nats.go"
@@ -32,9 +33,8 @@ type (
 		conn *natn.Conn
 		opts *natn.Options
 
-		name string
-
-		subjectPrefix string
+		name   string
+		prefix string
 
 		encoder      PublishMessageEncoder
 		befores      []BeforePublish
@@ -77,7 +77,7 @@ func WithPublisherName(name string) PublisherOption {
 
 func WithPublisherSubjectPrefix(prefix string) PublisherOption {
 	return func(p *Publisher) {
-		p.subjectPrefix = prefix
+		p.prefix = prefix
 	}
 }
 
@@ -134,14 +134,14 @@ func NewPublisher(connstr string, options ...PublisherOption) (*Publisher, error
 		cc   *natn.Conn
 		opts = natn.GetDefaultOptions()
 		pb   = &Publisher{
-			conn:          nil,
-			opts:          &opts,
-			name:          "go-base-publisher",
-			subjectPrefix: "gb",
-			encoder:       defaultPublishMessageEncoder,
-			befores:       []BeforePublish{},
-			afters:        []AfterPublish{},
-			errorHandler:  defaultPublishErrorHandler,
+			conn:         nil,
+			opts:         &opts,
+			name:         "go-base-publisher",
+			prefix:       "gb",
+			encoder:      defaultPublishMessageEncoder,
+			befores:      []BeforePublish{},
+			afters:       []AfterPublish{},
+			errorHandler: defaultPublishErrorHandler,
 		}
 	)
 
@@ -162,16 +162,23 @@ func NewPublisher(connstr string, options ...PublisherOption) (*Publisher, error
 	return pb, err
 }
 
+func subject(prefix, subject string) string {
+	if prefix != "" {
+		return fmt.Sprintf("%s.%s", prefix, subject)
+	}
+	return subject
+}
+
 // Endpoint returns a usable endpoint that invokes the remote endpoint.
-func (p *Publisher) Endpoint(subject string) endpoint.Endpoint {
+func (p *Publisher) Endpoint(sub string) endpoint.Endpoint {
 	return func(ctx context.Context, data interface{}) (interface{}, error) {
-		return p.send(ctx, subject, data)
+		return p.send(ctx, subject(p.prefix, sub), data)
 	}
 }
 
 // Publish publishes the message on NATS
 func (p *Publisher) Publish(ctx context.Context, sub string, data interface{}) error {
-	_, err := p.send(ctx, sub, data)
+	_, err := p.send(ctx, subject(p.prefix, sub), data)
 	return err
 }
 
