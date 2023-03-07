@@ -14,6 +14,7 @@ type (
 	// TransportOption is optional parameters for NATS Transport
 	TransportOption func(*Transport)
 
+	ConnectionErrHandler func(t *Transport, e error)
 	// Transport is transport server for natn.IO connection
 	Transport struct {
 		open  bool
@@ -80,6 +81,17 @@ func WithName(n string) TransportOption {
 func WithLogging(logger log.Logger) TransportOption {
 	return func(tr *Transport) {
 		tr.logger = logger
+	}
+}
+
+// WithConnectionErrorHandler sets a handler for connection errors
+func WithConnectionErrorHandler(h ConnectionErrHandler) TransportOption {
+	return func(t *Transport) {
+		t.conn.SetErrorHandler(
+			func(c *natn.Conn, s *natn.Subscription, e error) {
+				h(t, e)
+			},
+		)
 	}
 }
 
