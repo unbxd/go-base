@@ -37,7 +37,7 @@ func (c *cache) set(
 ) error {
 	var err error
 
-	stcmd := c.cc.Set(cx, key, val, NOEXPIRE)
+	stcmd := c.cc.Set(cx, key, val, duration)
 	err = stcmd.Err()
 
 	return err
