@@ -27,6 +27,7 @@ type (
 		filters []Filter
 
 		mux      Mux
+
 		logger   log.Logger
 		monitors []string
 		metricer Metricser
@@ -302,10 +303,12 @@ func NewTransport(
 		o(transport)
 	}
 
-
-	transport.mux = NewMux(transport.muxOptions...)
+	if transport.mux == nil {
+		transport.mux = NewDefaultMux(transport.muxOptions...)
+	}
 
 	transport.Handler = transport.mux
+
 	if transport.filters != nil {
 		transport.Handler = Chain(transport.mux, transport.filters...)
 	}

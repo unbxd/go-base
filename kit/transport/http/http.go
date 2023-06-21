@@ -23,7 +23,7 @@ type muxer struct {
 	*tmux.ContextMux
 }
 
-func NewMux(opts ...MuxOption) (Mux) {
+func NewDefaultMux(opts ...MuxOption) (Mux) {
 	mx := &muxer{tmux.NewContextMux()}
 
 	for _, o := range opts {
@@ -33,7 +33,7 @@ func NewMux(opts ...MuxOption) (Mux) {
 	return mx
 }
 
-func WithNoTrailingRedirect() MuxOption {
+func WithDefaultMuxNoTrailingRedirect() MuxOption {
 	return func(mx *muxer) {
 		mx.RedirectTrailingSlash = false
 	}
