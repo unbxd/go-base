@@ -3,6 +3,7 @@ package http
 import (
 	net_http "net/http"
 
+	tmux "github.com/dimfeld/httptreemux/v5"
 	"github.com/go-kit/kit/metrics"
 )
 
@@ -14,6 +15,30 @@ type Mux interface {
 	// Default Handler Method is all that is needed
 	Handler(method, url string, fn net_http.Handler)
 }
+
+type MuxOption func(*muxer)
+
+
+type muxer struct {
+	*tmux.ContextMux
+}
+
+func NewDefaultMux(opts ...MuxOption) (Mux) {
+	mx := &muxer{tmux.NewContextMux()}
+
+	for _, o := range opts {
+		o(mx)
+	}
+
+	return mx
+}
+
+func WithDefaultMuxNoTrailingRedirect() MuxOption {
+	return func(mx *muxer) {
+		mx.RedirectTrailingSlash = false
+	}
+}
+
 
 // Metricser is wrapper for supported metrics agents
 type Metricser interface {

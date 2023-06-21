@@ -81,3 +81,10 @@ func WithMonitors(monitors []string) TransportOption {
 		tr.monitors = append(tr.monitors, monitors...)
 	}
 }
+
+// WithMuxOption allows additional customisations of Multiplexer
+func WithMuxOption(opt MuxOption) TransportOption {
+	return func(tr *Transport) {
+		tr.muxOptions = append(tr.muxOptions, opt)	
+	}
+}
