@@ -5,7 +5,6 @@ import (
 	net_http "net/http"
 	"time"
 
-	tmux "github.com/dimfeld/httptreemux/v5"
 	"github.com/unbxd/go-base/utils/log"
 )
 
@@ -21,6 +20,8 @@ type (
 
 		// default HandlerOption
 		options []HandlerOption
+
+		muxOptions []MuxOption
 
 		//server level filter, applicable for all handlers
 		filters []Filter
@@ -290,9 +291,12 @@ func NewTransport(
 		options: []HandlerOption{
 			NewPopulateRequestContextRequestFunc(),
 		},
-		mux:      tmux.NewContextMux(),
+		mux:	nil,  
+		muxOptions:  make([]MuxOption, 0),
 		monitors: []string{"/ping"},
 	}
+
+
 
 	for _, o := range options {
 		o(transport)
@@ -303,5 +307,6 @@ func NewTransport(
 		transport.Handler = Chain(transport.mux, transport.filters...)
 	}
 
+	transport.mux = NewMux(transport.muxOptions...)
 	return transport, nil
 }
