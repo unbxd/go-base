@@ -302,11 +302,13 @@ func NewTransport(
 		o(transport)
 	}
 
+
+	transport.mux = NewMux(transport.muxOptions...)
+
 	transport.Handler = transport.mux
 	if transport.filters != nil {
 		transport.Handler = Chain(transport.mux, transport.filters...)
 	}
 
-	transport.mux = NewMux(transport.muxOptions...)
 	return transport, nil
 }
