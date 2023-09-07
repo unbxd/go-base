@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/DataDog/datadog-go v4.8.3+incompatible
-	github.com/dimfeld/httptreemux/v5 v5.4.0
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-kit/kit v0.12.0
 	github.com/go-kit/log v0.2.1
 	github.com/go-redis/redis/v9 v9.0.0-rc.2

@@ -3,7 +3,7 @@ package http
 import (
 	net_http "net/http"
 
-	tmux "github.com/dimfeld/httptreemux/v5"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-kit/kit/metrics"
 )
 
@@ -18,13 +18,16 @@ type Mux interface {
 
 type MuxOption func(*muxer)
 
-
 type muxer struct {
-	*tmux.ContextMux
+	*chi.Mux
 }
 
-func NewDefaultMux(opts ...MuxOption) (Mux) {
-	mx := &muxer{tmux.NewContextMux()}
+func (mx *muxer) Handler(method, url string, fn net_http.Handler) {
+	mx.Method(method, url, fn)
+}
+
+func NewDefaultMux(opts ...MuxOption) Mux {
+	mx := &muxer{chi.NewMux()}
 
 	for _, o := range opts {
 		o(mx)
@@ -32,13 +35,6 @@ func NewDefaultMux(opts ...MuxOption) (Mux) {
 
 	return mx
 }
-
-func WithDefaultMuxNoTrailingRedirect() MuxOption {
-	return func(mx *muxer) {
-		mx.RedirectTrailingSlash = false
-	}
-}
-
 
 // Metricser is wrapper for supported metrics agents
 type Metricser interface {

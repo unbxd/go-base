@@ -245,7 +245,7 @@ func main() {
 	})
 
 	// Another Example is of using URL parameters
-	tr.Get("/ping/:name", func(
+	tr.Get("/ping/{name}", func(
 		ctx context.Context,
 		req *net_http.Request,
 	) (*net_http.Response, error) {
@@ -254,7 +254,7 @@ func main() {
 		return http.NewResponse(
 			req,
 			http.ResponseWithBytes(
-				[]byte(params.ByName("name")),
+				[]byte("hello "+params.ByName("name")+"!"),
 			),
 		), nil
 	})
