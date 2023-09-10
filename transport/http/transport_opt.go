@@ -4,7 +4,7 @@ import (
 	"time"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 // WithMux sets the multiplexer for transport
@@ -24,10 +24,10 @@ func WithLogger(logger log.Logger) TransportOption {
 // WithFullDefaults sets default ServerOption, used
 // by every request handler
 // It sets following filters for the request
-// 	- RequestID
-//	- CORS
-// 	- DefaultErrorHandler
-//	- DefaultTranceLogger (using transport.Logger)
+//   - RequestID
+//   - CORS
+//   - DefaultErrorHandler
+//   - DefaultTranceLogger (using transport.Logger)
 func WithFullDefaults() TransportOption {
 	return func(tr *Transport) {
 		tr.options = append(tr.options, []HandlerOption{
@@ -85,6 +85,6 @@ func WithMonitors(monitors []string) TransportOption {
 // WithMuxOption allows additional customisations of Multiplexer
 func WithMuxOption(opt MuxOption) TransportOption {
 	return func(tr *Transport) {
-		tr.muxOptions = append(tr.muxOptions, opt)	
+		tr.muxOptions = append(tr.muxOptions, opt)
 	}
 }

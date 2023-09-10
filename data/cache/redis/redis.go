@@ -13,7 +13,7 @@ import (
 	"time"
 
 	redis "github.com/go-redis/redis/v9"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 var NOEXPIRE = time.Duration(0)

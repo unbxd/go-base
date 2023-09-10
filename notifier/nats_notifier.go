@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/unbxd/go-base/kit/transport/nats"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/transport/nats"
 )
 
 type (

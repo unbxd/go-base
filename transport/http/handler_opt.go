@@ -6,12 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"net/http"
 	net_http "net/http"
 
 	kit_http "github.com/go-kit/kit/transport/http"
 	uuid "github.com/gofrs/uuid"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 // NewTraceLoggerFinalizerHandlerOption returns a HandlerOption for simple trace logging
@@ -81,7 +80,7 @@ func NewRequestIDHandlerOption(customHeaders ...string) HandlerOption {
 		return ctx
 	}
 
-	fna := func(ctx context.Context, rw http.ResponseWriter) context.Context {
+	fna := func(ctx context.Context, rw net_http.ResponseWriter) context.Context {
 		id := ctx.Value(ContextKeyRequestXRequestID).(string)
 
 		rw.Header().Set(rid, id)
@@ -202,7 +201,7 @@ func NewDeleteHeaderHandlerOption(headers ...string) HandlerOption {
 	}
 }
 
-func populateRequestContext(ctx context.Context, r *http.Request) context.Context {
+func populateRequestContext(ctx context.Context, r *net_http.Request) context.Context {
 	for k, v := range map[ContextKey]string{
 		ContextKeyRequestMethod:          r.Method,
 		ContextKeyRequestURI:             r.RequestURI,

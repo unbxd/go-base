@@ -6,8 +6,8 @@ import (
 	net_http "net/http"
 	"time"
 
-	"github.com/unbxd/go-base/kit/endpoint"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/log"
 
 	"github.com/pkg/errors"
 	"github.com/unbxd/hystrix-go/hystrix"

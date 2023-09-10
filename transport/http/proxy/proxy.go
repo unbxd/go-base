@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/unbxd/go-base/kit/endpoint"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/log"
 )
 
 const defaultUserAgent = "Mozart-[go-dialer]"

@@ -10,7 +10,7 @@ import (
 	"github.com/go-kit/kit/metrics/dogstatsd"
 	kitlogger "github.com/go-kit/log"
 	"github.com/mitchellh/mapstructure"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 type (
@@ -105,19 +105,20 @@ func WithDatadogLogger(logger log.Logger) DatadogOption {
 // for backward compatibility.
 // Here is the expected configuration when read in YAML
 //
-// 	url: "datadog:8125"
-// 	namespace: "wingman"
-// 	tags:
-// 	  - "env:compose"
-// 	  - "ci:true"
+//	url: "datadog:8125"
+//	namespace: "wingman"
+//	tags:
+//	  - "env:compose"
+//	  - "ci:true"
 //
 // the structure which reads the config is defined as
 //
-// 	type Config struct {
-// 		URL        string `json:"url" yaml:"url"`
-// 		Namespace  string `json:"namespace" yaml:"namespace"`
-// 		Tags       []string `json:"tags" yaml:"tags"`
-// 	}
+//	type Config struct {
+//		URL        string `json:"url" yaml:"url"`
+//		Namespace  string `json:"namespace" yaml:"namespace"`
+//		Tags       []string `json:"tags" yaml:"tags"`
+//	}
+//
 // Note: skipErrors is not required anymore
 func WithDatadogConfigObject(cfg interface{}) DatadogOption {
 	type config struct {

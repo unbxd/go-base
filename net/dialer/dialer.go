@@ -5,7 +5,7 @@ import (
 	"net/http"
 	net_http "net/http"
 
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 
 	"github.com/pkg/errors"
 )
@@ -17,7 +17,7 @@ var (
 )
 
 /*
-	Dialer and Required Interfaces
+Dialer and Required Interfaces
 */
 type (
 	// Dialer interface defines the dialer for a downstream request

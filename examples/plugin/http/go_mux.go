@@ -3,7 +3,7 @@ package http
 import (
 	net_http "net/http"
 
-	base_http "github.com/unbxd/go-base/kit/transport/http"
+	base_http "github.com/unbxd/go-base/transport/http"
 )
 
 type gomux struct {

@@ -5,7 +5,7 @@ import (
 	net_http "net/http"
 	"time"
 
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 type (
@@ -26,7 +26,7 @@ type (
 		//server level filter, applicable for all handlers
 		filters []Filter
 
-		mux      Mux
+		mux Mux
 
 		logger   log.Logger
 		monitors []string
@@ -292,12 +292,10 @@ func NewTransport(
 		options: []HandlerOption{
 			NewPopulateRequestContextRequestFunc(),
 		},
-		mux:	nil,  
-		muxOptions:  make([]MuxOption, 0),
-		monitors: []string{"/ping"},
+		mux:        nil,
+		muxOptions: make([]MuxOption, 0),
+		monitors:   []string{"/ping"},
 	}
-
-
 
 	for _, o := range options {
 		o(transport)

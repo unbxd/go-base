@@ -10,8 +10,8 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/unbxd/go-base/data/driver"
 	"github.com/unbxd/go-base/data/driver/zook"
-	"github.com/unbxd/go-base/kit/endpoint"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/log"
 )
 
 const (

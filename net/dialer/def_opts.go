@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/log"
 	"github.com/unbxd/go-base/net/retrier"
-	"github.com/unbxd/go-base/utils/log"
 )
 
 type (

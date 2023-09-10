@@ -7,7 +7,7 @@ import (
 	"time"
 
 	natn "github.com/nats-io/nats.go"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 type (

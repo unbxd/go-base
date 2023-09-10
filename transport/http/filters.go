@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"text/template"
 
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 	"go.elastic.co/apm/module/apmhttp"
 )
 
@@ -21,7 +21,7 @@ func Chain(inner net_http.Handler, filters ...Filter) net_http.Handler {
 	return filters[0](Chain(inner, filters[1:]...))
 }
 
-//very basic panic recovery filter
+// very basic panic recovery filter
 func PanicRecovery(logger log.Logger) Filter {
 	return func(next net_http.Handler) net_http.Handler {
 		return net_http.HandlerFunc(func(w net_http.ResponseWriter, r *net_http.Request) {
@@ -284,7 +284,7 @@ func DecoratedPanicRecoveryFilter(logger log.Logger, opts ...RecoveryFilterOptio
 	}
 }
 
-//elastic apm filter wrapper
+// elastic apm filter wrapper
 func ElasticApm() Filter {
 	return func(next net_http.Handler) net_http.Handler {
 		return apmhttp.Wrap(next)

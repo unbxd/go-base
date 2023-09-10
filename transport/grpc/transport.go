@@ -27,7 +27,7 @@ func (tr *Transport) Open() error {
 	return tr.Serve(listener)
 }
 
-//NewTransport returns a new transport
+// NewTransport returns a new transport
 func NewTransport(options ...TransportOption) (*Transport, error) {
 	transport := &Transport{
 		Server: grpc.NewServer(),

@@ -6,7 +6,7 @@ import (
 
 	"github.com/unbxd/go-base/data/cache/inmem"
 	"github.com/unbxd/go-base/data/cache/redis"
-	"github.com/unbxd/go-base/utils/log"
+	"github.com/unbxd/go-base/log"
 )
 
 type Cache interface {

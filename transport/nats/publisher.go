@@ -9,7 +9,7 @@ import (
 
 	natn "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"github.com/unbxd/go-base/kit/endpoint"
+	"github.com/unbxd/go-base/endpoint"
 )
 
 type (
