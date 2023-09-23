@@ -6,8 +6,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Params is wrapper on top of params in Context
-type Params interface {
+// URLParamsParser parses the URL for the multiplexer
+type URLParamsParser interface {
 	ByName(string) string
 }
 
@@ -27,6 +27,6 @@ func (p *defaultParams) ByName(key string) string {
 
 // Parameters returns the request parameters extracted from
 // http.Request
-func Parameters(r *http.Request) Params {
+func Parameters(r *http.Request) URLParamsParser {
 	return &defaultParams{&chi.RouteContext(r.Context()).URLParams}
 }

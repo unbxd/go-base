@@ -1,6 +1,8 @@
 package log
 
 import (
+	"context"
+
 	"go.uber.org/zap"
 )
 
@@ -93,6 +95,14 @@ func (zl *zapLogger) With(fields ...Field) Logger {
 	return l
 }
 
+func (zl *zapLogger) WithContext(ctx context.Context) context.Context {
+	if _, ok := ctx.Value(ctxKey{}).(Logger); !ok {
+		// Do not store disabled logger.
+		return ctx
+	}
+	return context.WithValue(ctx, ctxKey{}, &zl)
+}
+
 func (zl *zapLogger) clone() *zapLogger {
 	copy := *zl
 	return &copy
@@ -131,7 +141,7 @@ func ZapWithLevel(level string) ZapLoggerOption {
 	}
 }
 
-//ZapWithEncoding is option to set encoding for zap based logger
+// ZapWithEncoding is option to set encoding for zap based logger
 func ZapWithEncoding(encoding string) ZapLoggerOption {
 	return func(zl *zapLogger) {
 		zl.config.Encoding = encoding

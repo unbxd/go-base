@@ -1,17 +1,21 @@
 package log
 
 import (
+	"context"
+
 	kit_log "github.com/go-kit/log"
 )
 
 // FieldType defines the type for a field
 type FieldType int
+type ctxKey struct{}
 
 // Field Types supported by Logger
 const (
 	UNKNOWN FieldType = iota
 	BOOL
 	INT
+	INT64
 	STRING
 	ERROR
 	FLOAT
@@ -43,7 +47,7 @@ func Int(key string, value int) Field {
 
 // Int64 is a wrapper int64 values for logging
 func Int64(key string, value int64) Field {
-	return Field{Key: key, Type: INT, Integer: int64(value)}
+	return Field{Key: key, Type: INT64, Integer: int64(value)}
 }
 
 // Bool is a wrapper for boolean values for logging
@@ -95,4 +99,13 @@ type Logger interface {
 
 	// Default Fields
 	With(...Field) Logger
+	WithContext(cx context.Context) context.Context
+}
+
+// Ctx returns the logger wrapped in the Context
+func FromCtx(cx context.Context) Logger {
+	if logger, ok := cx.Value(ctxKey{}).(Logger); ok {
+		return logger
+	}
+	return &noopLogger{}
 }
