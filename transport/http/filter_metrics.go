@@ -29,10 +29,7 @@ func filterMonitors(monitors []string) otelhttp.Filter {
 func filterDefaultMux() otelhttp.Filter {
 	return func(r *http.Request) bool {
 		cx := chi.RouteContext(r.Context())
-		if cx == nil {
-			return false
-		}
-		return true
+		return cx != nil
 	}
 }
 
@@ -46,9 +43,8 @@ func defaultSpanNameFormatter(operation string, r *http.Request) string {
 	)
 
 	if operation != "" {
-
 		sb.WriteString(operation)
-		sb.WriteRune('-')
+		sb.WriteRune(' ')
 	}
 
 	sb.WriteString(r.Method)
@@ -58,6 +54,23 @@ func defaultSpanNameFormatter(operation string, r *http.Request) string {
 	return sb.String()
 }
 
+// OpenTelemetryFilterForDefaultMux uses OpenTelemetry to publish events
+// There are multiple providers for OpenTelemetry that can be used
+// A simple example of using this filter is by just setting this up in the
+// filter chain and in the application, set the provider
+// Example using Datadog
+// gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentelemetry
+//
+//	import (
+//		"go.opentelemetry.io/otel"
+//		ddotel "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentelemetry"
+//	)
+//
+//	func main() {
+//		provider := ddotel.NewTracerProvider()
+//		defer provider.Shutdown()
+//		otel.SetTracerProvider(provider)
+//	}
 func OpenTelemetryFilterForDefaultMux(
 	monitors []string,
 	labels map[string]string,
@@ -69,8 +82,16 @@ func OpenTelemetryFilterForDefaultMux(
 		attribs = append(attribs, attribute.String(k, v))
 	}
 
+	// this is slightly in-efficient that we are double wrapping
+	// http.ResponseWriter.
+	// In this middleware, there is a wrapping of 'respWriterWrapper'
+	// to extract the status code, which we do too in case of
+	// `WrapResponseWriter`
+	// This in itself shouldn't cause any issue because ResponseWriter
+	// is an interface and we are wrapping it twice, just that
+	// it introduces a bit of overhead of computation
 	return otelhttp.NewMiddleware(
-		"",
+		"http-serve",
 		otelhttp.WithFilter(filterMonitors(monitors)),
 		otelhttp.WithFilter(filterDefaultMux()),
 		otelhttp.WithSpanNameFormatter(formatter),

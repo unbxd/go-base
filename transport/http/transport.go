@@ -21,8 +21,6 @@ type (
 		// default HandlerOption
 		options []HandlerOption
 
-		muxOptions []MuxOption
-
 		//server level filter, applicable for all handlers
 		filters []Filter
 
@@ -84,13 +82,12 @@ func NewTransport(
 	logger, _ := log.NewZapLogger()
 
 	transport := &Transport{
-		Server:     &net_http.Server{Addr: host + ":" + port},
-		options:    []HandlerOption{},
-		mux:        nil,
-		muxOptions: make([]MuxOption, 0),
-		monitors:   []string{"/ping"},
-		logger:     logger,
-		filters:    []Filter{},
+		Server:   &net_http.Server{Addr: host + ":" + port},
+		options:  []HandlerOption{},
+		mux:      nil,
+		monitors: []string{"/ping"},
+		logger:   logger,
+		filters:  []Filter{},
 	}
 
 	for _, o := range options {
@@ -98,7 +95,7 @@ func NewTransport(
 	}
 
 	if transport.mux == nil {
-		transport.mux = NewDefaultMux(transport.muxOptions...)
+		transport.mux = NewDefaultMux() // just defaults with chi
 	}
 
 	transport.Handler = transport.mux

@@ -7,6 +7,7 @@ import (
 )
 
 // WithMux sets the multiplexer for transport
+// Deprecated: Ability to override multiplexer is being removed from transport
 func WithMux(mux Mux) TransportOption {
 	return func(tr *Transport) {
 		tr.mux = mux
@@ -64,13 +65,6 @@ func WithTimeout(idle, write, read time.Duration) TransportOption {
 func WithMonitors(monitors []string) TransportOption {
 	return func(tr *Transport) {
 		tr.monitors = append(tr.monitors, monitors...)
-	}
-}
-
-// WithMuxOption allows additional customisations of Multiplexer
-func WithMuxOption(opt MuxOption) TransportOption {
-	return func(tr *Transport) {
-		tr.muxOptions = append(tr.muxOptions, opt)
 	}
 }
 
