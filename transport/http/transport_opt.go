@@ -4,20 +4,12 @@ import (
 	"time"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/unbxd/go-base/log"
 )
 
 // WithMux sets the multiplexer for transport
 func WithMux(mux Mux) TransportOption {
 	return func(tr *Transport) {
 		tr.mux = mux
-	}
-}
-
-// WithLogger sets custom logger for Transport
-func WithLogger(logger log.Logger) TransportOption {
-	return func(tr *Transport) {
-		tr.logger = logger
 	}
 }
 
@@ -33,7 +25,6 @@ func WithFullDefaults() TransportOption {
 		tr.options = append(tr.options, []HandlerOption{
 			NewCORSHandlerOption(),
 			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
-			NewTraceLoggerFinalizerHandlerOption(tr.logger),
 		}...)
 	}
 }
@@ -43,11 +34,6 @@ func WithHandlerOption(options ...HandlerOption) TransportOption {
 	return func(tr *Transport) {
 		tr.options = append(tr.options, options...)
 	}
-}
-
-// WithMetricser supports adding metricer to Transport
-func WithMetricser(metricer Metricser) TransportOption {
-	return func(tr *Transport) { tr.metricer = metricer }
 }
 
 // WithTransportErrorEncoder lets us put a custom error encoder for the Transport
@@ -85,5 +71,11 @@ func WithMonitors(monitors []string) TransportOption {
 func WithMuxOption(opt MuxOption) TransportOption {
 	return func(tr *Transport) {
 		tr.muxOptions = append(tr.muxOptions, opt)
+	}
+}
+
+func WithFilterTransportOption(filter ...Filter) TransportOption {
+	return func(tr *Transport) {
+		tr.filters = append(tr.filters, filter...)
 	}
 }

@@ -8,43 +8,43 @@ import (
 	net_http "net/http"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/unbxd/go-base/log"
 )
 
 // NewTraceLoggerFinalizerHandlerOption returns a HandlerOption for simple trace logging
-func NewTraceLoggerFinalizerHandlerOption(logger log.Logger) HandlerOption {
-	return func(h *handler) {
-		option := kit_http.ServerFinalizer(
-			func(ctx context.Context, code int, r *net_http.Request) {
-				// safety check if someone includes logging
-				// but doesn't provide a logger
-				if logger == nil {
-					return
-				}
+// DEPRECATED
+// func NewTraceLoggerFinalizerHandlerOption(logger log.Logger) HandlerOption {
+// 	return func(h *handler) {
+// 		option := kit_http.ServerFinalizer(
+// 			func(ctx context.Context, code int, r *net_http.Request) {
+// 				// safety check if someone includes logging
+// 				// but doesn't provide a logger
+// 				if logger == nil {
+// 					return
+// 				}
 
-				var fields = []log.Field{log.Int("code", code)}
-				for k, ck := range map[string]ContextKey{
-					"method":          ContextKeyRequestMethod,
-					"proto":           ContextKeyRequestProto,
-					"host":            ContextKeyRequestHost,
-					"remote_addr":     ContextKeyRequestRemoteAddr,
-					"x-forwarded-for": ContextKeyRequestXForwardedFor,
-					"x-request-id":    ContextKeyRequestXRequestID,
-				} {
-					val := ctx.Value(ck)
-					if val != nil {
-						str := val.(string)
+// 				var fields = []log.Field{log.Int("code", code)}
+// 				for k, ck := range map[string]ContextKey{
+// 					"method":          ContextKeyRequestMethod,
+// 					"proto":           ContextKeyRequestProto,
+// 					"host":            ContextKeyRequestHost,
+// 					"remote_addr":     ContextKeyRequestRemoteAddr,
+// 					"x-forwarded-for": ContextKeyRequestXForwardedFor,
+// 					"x-request-id":    ContextKeyRequestXRequestID,
+// 				} {
+// 					val := ctx.Value(ck)
+// 					if val != nil {
+// 						str := val.(string)
 
-						fields = append(fields, log.String(k, str))
-					}
-				}
+// 						fields = append(fields, log.String(k, str))
+// 					}
+// 				}
 
-				logger.Info(r.URL.RequestURI(), fields...)
-			},
-		)
-		h.options = append(h.options, option)
-	}
-}
+// 				logger.Info(r.URL.RequestURI(), fields...)
+// 			},
+// 		)
+// 		h.options = append(h.options, option)
+// 	}
+// }
 
 // NewRequestIDHandlerOption returns a HandlerOption for a customheader to be populated
 // with request id, generated at filter

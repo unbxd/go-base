@@ -254,7 +254,7 @@ func WithDatadogClient(client *statsd.Client) BreakerOption {
 }
 
 // WithMetricsCollector sets the breaker with go-base metrics event emitter
-func WithMetricsCollector(metrics metrics.Metrics) BreakerOption {
+func WithMetricsCollector(metrics metrics.Provider) BreakerOption {
 	return func(tp *Breaker) error {
 		metric.Registry.Register(
 			cbplugins.NewMetricsCollector(metrics),

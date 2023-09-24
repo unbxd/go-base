@@ -31,7 +31,6 @@ type (
 		logger log.Logger
 
 		monitors []string
-		metricer Metricser
 	}
 )
 
@@ -49,12 +48,6 @@ func TransportWithFilter(f Filter) TransportOption {
 
 // Open starts the Transport
 func (tr *Transport) Open() error {
-
-	if tr.metricer != nil {
-		if hn := tr.metricer.Handler(); hn != nil {
-			tr.mux.Handler(net_http.MethodGet, "/metrics", hn)
-		}
-	}
 
 	for _, mon := range tr.monitors {
 		tr.mux.Handler(net_http.MethodGet, mon, net_http.HandlerFunc(
@@ -79,11 +72,17 @@ func (tr *Transport) Close() error {
 }
 
 // NewTransport returns a new transport
+// TODO: use Transport Config to build the Transport, configurations shouldn't be like this
+//
+// Deprecated: use the new config interface to create Transport.
+// This one tries to do the best with sane defaults, but the configuration
+// is way more streamlined in the new intializer `NewHttpTansport`.
 func NewTransport(
-	logger log.Logger,
 	host, port string,
 	options ...TransportOption,
 ) (*Transport, error) {
+	logger, _ := log.NewZapLogger()
+
 	transport := &Transport{
 		Server:     &net_http.Server{Addr: host + ":" + port},
 		options:    []HandlerOption{},
@@ -91,12 +90,7 @@ func NewTransport(
 		muxOptions: make([]MuxOption, 0),
 		monitors:   []string{"/ping"},
 		logger:     logger,
-		filters: []Filter{
-			CloserFilter(),
-			PanicRecoveryFilter(logger),
-			RequestIDFilter(),
-			DecorateContextFilter(),
-		},
+		filters:    []Filter{},
 	}
 
 	for _, o := range options {
@@ -109,9 +103,20 @@ func NewTransport(
 
 	transport.Handler = transport.mux
 
-	if transport.filters != nil {
-		transport.Handler = Chain(transport.mux, transport.filters...)
+	filters := []Filter{
+		CloserFilter(),                // Simple Closer, closes the request in defer
+		WrappedResponseWriterFilter(), // casts to WrappedResposeWriter, gives bunch of util functions
+		PanicRecoveryFilter(transport.logger, WithStack(1024*8, false)), // Handles Panic
+		RequestIDFilter(),       // Handles RequestID generation
+		DecorateContextFilter(), // Decorates the context.Context of request
+		OpenTelemetryFilterForDefaultMux([]string{}, make(map[string]string)), // Open telemetry
+		TraceLoggingFilter(transport.logger),                                  // Trace Logging
 	}
 
+	if transport.filters != nil {
+		filters = append(filters, transport.filters...)
+	}
+
+	transport.Handler = Chain(transport.mux, filters...)
 	return transport, nil
 }

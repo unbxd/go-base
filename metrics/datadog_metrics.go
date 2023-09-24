@@ -169,7 +169,7 @@ func (dd *datadog) NewGauge(name string) Gauge {
 }
 
 // NewDatadogMetrics returns metrics which supports Datadog
-func NewDatadogMetrics(opts ...DatadogOption) (Metrics, error) {
+func NewDatadogMetrics(opts ...DatadogOption) (Provider, error) {
 	dd := &datadog{
 		connstr: "",
 		host:    "localhost",

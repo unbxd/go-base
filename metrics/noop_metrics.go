@@ -38,4 +38,4 @@ func (nm noopMetrics) NewHistogram(name string, sampleRate float64) Histogram {
 }
 func (nm noopMetrics) NewGauge(name string) Gauge { return &noopMetricsGauge{} }
 
-func NewNoopMetrics() Metrics { return &noopMetrics{} }
+func NewNoopMetrics() Provider { return &noopMetrics{} }
