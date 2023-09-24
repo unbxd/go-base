@@ -4,12 +4,10 @@ import (
 	"context"
 	"strconv"
 	"strings"
-	"time"
 
 	net_http "net/http"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	uuid "github.com/gofrs/uuid"
 	"github.com/unbxd/go-base/log"
 )
 
@@ -48,53 +46,15 @@ func NewTraceLoggerFinalizerHandlerOption(logger log.Logger) HandlerOption {
 	}
 }
 
-// NewRequestIDHandlerOption returns a HandlerOption for simple Request ID generation
-func NewRequestIDHandlerOption(customHeaders ...string) HandlerOption {
-	rid := "X-Request-Id"
-
-	fnb := func(ctx context.Context, r *net_http.Request) context.Context {
-		var id string
-		// ignore if already set & no custom headers
-		if r.Header.Get(rid) != "" && len(customHeaders) == 0 {
-			return ctx
-		}
-
-		uid, err := uuid.NewV4()
-		if err != nil {
-			id = strconv.FormatInt(time.Now().UnixNano(), 10)
-		} else {
-			id = uid.String()
-		}
-
-		if r.Header.Get(rid) != "" {
-			id = r.Header.Get(rid)
-		}
-
-		r.Header.Set(rid, id)
-		ctx = context.WithValue(ctx, ContextKeyRequestXRequestID, id)
-
-		for _, hr := range customHeaders {
-			r.Header.Set(hr, id)
-		}
-
-		return ctx
-	}
-
-	fna := func(ctx context.Context, rw net_http.ResponseWriter) context.Context {
-		id := ctx.Value(ContextKeyRequestXRequestID).(string)
-
-		rw.Header().Set(rid, id)
-
-		for _, hr := range customHeaders {
-			rw.Header().Set(hr, id)
-		}
-
-		return ctx
-	}
-
+// NewRequestIDHandlerOption returns a HandlerOption for a customheader to be populated
+// with request id, generated at filter
+// This is same as CustomRequestIDFilter except at per Handler level
+func NewRequestIDHandlerOption(prefix, suffix string, customHeaders ...string) HandlerOption {
 	return func(h *handler) {
-		h.options = append(h.options, kit_http.ServerBefore(fnb))
-		h.options = append(h.options, kit_http.ServerAfter(fna))
+		h.filters = append(
+			h.filters,
+			CustomRequestIDFilter(prefix, suffix, customHeaders...),
+		)
 	}
 }
 
@@ -197,37 +157,6 @@ func NewDeleteHeaderHandlerOption(headers ...string) HandlerOption {
 
 				return ctx
 			},
-		))
-	}
-}
-
-func populateRequestContext(ctx context.Context, r *net_http.Request) context.Context {
-	for k, v := range map[ContextKey]string{
-		ContextKeyRequestMethod:          r.Method,
-		ContextKeyRequestURI:             r.RequestURI,
-		ContextKeyRequestPath:            r.URL.Path,
-		ContextKeyRequestProto:           r.Proto,
-		ContextKeyRequestHost:            r.Host,
-		ContextKeyRequestRemoteAddr:      r.RemoteAddr,
-		ContextKeyRequestXForwardedFor:   r.Header.Get("X-Forwarded-For"),
-		ContextKeyRequestXForwardedProto: r.Header.Get("X-Forwarded-Proto"),
-		ContextKeyRequestAuthorization:   r.Header.Get("Authorization"),
-		ContextKeyRequestReferer:         r.Header.Get("Referer"),
-		ContextKeyRequestUserAgent:       r.Header.Get("User-Agent"),
-		ContextKeyRequestXRequestID:      r.Header.Get("X-Request-Id"),
-		ContextKeyRequestAccept:          r.Header.Get("Accept"),
-	} {
-		ctx = context.WithValue(ctx, k, v)
-	}
-	return ctx
-}
-
-// NewPopulateRequestContextRequestFunc populates the context with
-// properties extracted from net_http.Request
-func NewPopulateRequestContextRequestFunc() HandlerOption {
-	return func(h *handler) {
-		h.options = append(h.options, kit_http.ServerBefore(
-			populateRequestContext,
 		))
 	}
 }

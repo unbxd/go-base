@@ -1,49 +1,11 @@
 package http
 
 import (
+	"context"
 	net_http "net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-kit/kit/metrics"
+	"github.com/pkg/errors"
 )
-
-// Mux defines the standard Multiplexer for http Request
-type Mux interface {
-	// ServeHTTP
-	net_http.Handler
-
-	// Default Handler Method is all that is needed
-	Handler(method, url string, fn net_http.Handler)
-}
-
-type MuxOption func(*muxer)
-
-type muxer struct {
-	*chi.Mux
-}
-
-func (mx *muxer) Handler(method, url string, fn net_http.Handler) {
-	mx.Method(method, url, fn)
-}
-
-func NewDefaultMux(opts ...MuxOption) Mux {
-	mx := &muxer{chi.NewMux()}
-
-	for _, o := range opts {
-		o(mx)
-	}
-
-	return mx
-}
-
-// Metricser is wrapper for supported metrics agents
-type Metricser interface {
-	Counter(prefix, name string) metrics.Counter
-
-	Histogram(prefix, name string) metrics.Histogram
-
-	Handler() net_http.Handler
-}
 
 // ContextKey is key for context
 type ContextKey int
@@ -67,11 +29,46 @@ const (
 	ContextKeyResponseSize
 )
 
+func decorateContext(ctx context.Context, r *net_http.Request) context.Context {
+	for k, v := range map[ContextKey]string{
+		ContextKeyRequestMethod:          r.Method,
+		ContextKeyRequestURI:             r.RequestURI,
+		ContextKeyRequestPath:            r.URL.Path,
+		ContextKeyRequestProto:           r.Proto,
+		ContextKeyRequestHost:            r.Host,
+		ContextKeyRequestRemoteAddr:      r.RemoteAddr,
+		ContextKeyRequestXForwardedFor:   r.Header.Get(HeaderXForwardedFor),
+		ContextKeyRequestXForwardedProto: r.Header.Get(HeaderXForwardedProto),
+		ContextKeyRequestAuthorization:   r.Header.Get(HeaderAuthorization),
+		ContextKeyRequestReferer:         r.Header.Get(HeaderReferer),
+		ContextKeyRequestUserAgent:       r.Header.Get(HeaderUserAgent),
+		ContextKeyRequestXRequestID:      r.Header.Get(HeaderRequestID),
+		ContextKeyRequestAccept:          r.Header.Get(HeaderAccept),
+	} {
+		ctx = context.WithValue(ctx, k, v)
+	}
+	return ctx
+}
+
 // Headers
 const (
-	HeaderAllowHeaders = "Access-Control-Allow-Headers"
-	HeaderAllowMethods = "Access-Control-Allow-Methods"
-	HeaderAllowOrigin  = "Access-Control-Allow-Origin"
-	HeaderExposeHeader = "Access-Control-Expose-Headers"
-	HeaderAccessMaxAge = "Access-Control-Max-Age"
+	HeaderAllowHeaders    = "Access-Control-Allow-Headers"
+	HeaderAllowMethods    = "Access-Control-Allow-Methods"
+	HeaderAllowOrigin     = "Access-Control-Allow-Origin"
+	HeaderExposeHeader    = "Access-Control-Expose-Headers"
+	HeaderAccessMaxAge    = "Access-Control-Max-Age"
+	HeaderRequestID       = "X-Request-Id"
+	HeaderXForwardedFor   = "X-Forwarded-For"
+	HeaderXForwardedProto = "X-Forwarded-Proto"
+	HeaderAuthorization   = "Authorization"
+	HeaderReferer         = "Referer"
+	HeaderUserAgent       = "User-Agent"
+	HeaderAccept          = "Accept"
+	HeaderContentType     = "Content-Type"
+)
+
+// Standard HTTP Errors
+var (
+	ErrNotHTTPRequest  = errors.New("missmatch type, request should be *http.Request")
+	ErrNotHTTPResponse = errors.New("mismatch type, response should be *http.Response")
 )

@@ -153,8 +153,7 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 		befores:      []BeforeFunc{},
 		afters:       []AfterFunc{},
 		options: []kit_http.ServerOption{
-			// default server options here
-			kit_http.ServerBefore(populateRequestContext),
+			kit_http.ServerBefore(decorateContext),
 		},
 	}
 
