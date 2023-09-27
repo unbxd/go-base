@@ -2,15 +2,12 @@ package http
 
 import (
 	"time"
-
-	kit_http "github.com/go-kit/kit/transport/http"
 )
 
-// WithMux sets the multiplexer for transport
-// Deprecated: Ability to override multiplexer is being removed from transport
-func WithMux(mux Mux) TransportOption {
+// WithMuxer sets the multiplexer for transport
+func WithMuxer(mux Muxer) TransportOption {
 	return func(tr *Transport) {
-		tr.mux = mux
+		tr.muxer = mux
 	}
 }
 
@@ -21,12 +18,11 @@ func WithMux(mux Mux) TransportOption {
 //   - CORS
 //   - DefaultErrorHandler
 //   - DefaultTranceLogger (using transport.Logger)
+//
+// Deprecated: use `WithProductionDefaults` for Production Environments, `WithDevDefaults` for Dev Env
 func WithFullDefaults() TransportOption {
 	return func(tr *Transport) {
-		tr.options = append(tr.options, []HandlerOption{
-			NewCORSHandlerOption(),
-			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
-		}...)
+		tr.options = append(tr.options, []HandlerOption{}...)
 	}
 }
 
@@ -43,6 +39,8 @@ func WithHandlerOption(options ...HandlerOption) TransportOption {
 // this will be used as default
 // If any Handler doesn't have an error encoder defined when throwing an error
 // this error encoder is used
+// Deprecated: default error handler is not overridable, defaultErrorHandler will
+// become default in next release
 func WithTransportErrorEncoder(fn ErrorEncoder) TransportOption {
 	return func(tr *Transport) {
 		tr.options = append(
@@ -58,18 +56,5 @@ func WithTimeout(idle, write, read time.Duration) TransportOption {
 		tr.IdleTimeout = idle
 		tr.WriteTimeout = write
 		tr.ReadTimeout = read
-	}
-}
-
-// WithMonitors appends to a default list of monitor endpoint supported by Transport
-func WithMonitors(monitors []string) TransportOption {
-	return func(tr *Transport) {
-		tr.monitors = append(tr.monitors, monitors...)
-	}
-}
-
-func WithFilterTransportOption(filter ...Filter) TransportOption {
-	return func(tr *Transport) {
-		tr.filters = append(tr.filters, filter...)
 	}
 }

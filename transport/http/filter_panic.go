@@ -9,7 +9,13 @@ import (
 	"github.com/unbxd/go-base/log"
 )
 
+const (
+	TextPanicFormatter PanicFormatterType = iota
+	HTMLPanicFormatter
+)
+
 type (
+	PanicFormatterType uint
 	// PanicInformation holds all elements required to print
 	// stack information about the panic
 	PanicInformation struct {
@@ -27,6 +33,7 @@ type (
 	// types of panic formatters
 	textPanicFormatter struct{}
 	htmlPanicFormatter struct{ template *template.Template }
+	// TODO: JSON Formatter
 
 	// PanicCallback gives a callback option to handle Panic with details
 	PanicCallback func(*PanicInformation)
@@ -162,6 +169,17 @@ func WithStack(stackSize int, stackOtherGoroutines bool) RecoveryOption {
 		r.returnStack = true
 		r.stackSize = stackSize
 		r.stackOthers = false
+	}
+}
+
+func WithFormatter(formatterType PanicFormatterType) RecoveryOption {
+	return func(r *Recovery) {
+		switch formatterType {
+		case TextPanicFormatter:
+			WithTextFormatter()(r)
+		case HTMLPanicFormatter:
+			WithHTMLFormatter()(r)
+		}
 	}
 }
 

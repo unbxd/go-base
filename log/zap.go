@@ -35,6 +35,8 @@ func (zl *zapLogger) convert(fields ...Field) []zap.Field {
 			if fl.Value != nil {
 				zfields = append(zfields, zap.Float64(fl.Key, fl.Value.(float64)))
 			}
+		case INT64:
+			fallthrough
 		case INT:
 			zfields = append(zfields, zap.Int64(fl.Key, fl.Integer))
 		case STRING:
@@ -175,6 +177,10 @@ func NewZapLogger(
 	config.Level = defaultLevel
 	config.OutputPaths = defaultOutputs
 	config.Encoding = defaultEncoding
+
+	config.InitialFields = map[string]interface{}{
+		"logger": "zap",
+	}
 
 	zl := &zapLogger{config: &config}
 

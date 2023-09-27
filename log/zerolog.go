@@ -36,13 +36,13 @@ func zerologEventFields(event *zerolog.Event, fields ...Field) *zerolog.Event {
 		if f.Value != nil {
 			switch f.Type {
 			case BOOL:
-				event = event.Bool(f.Key, f.Value.(bool))
+				event = event.Bool(f.Key, f.Integer == 1)
 			case INT:
-				event = event.Int(f.Key, f.Value.(int))
+				event = event.Int(f.Key, int(f.Integer))
 			case INT64:
-				event = event.Int64(f.Key, f.Value.(int64))
+				event = event.Int64(f.Key, f.Integer)
 			case STRING:
-				event = event.Str(f.Key, f.Value.(string))
+				event = event.Str(f.Key, f.String)
 			case FLOAT:
 				event = event.Float64(f.Key, f.Value.(float64))
 			case ERROR:
@@ -62,13 +62,13 @@ func zerologContextFields(cx zerolog.Context, fields ...Field) zerolog.Context {
 		if f.Value != nil {
 			switch f.Type {
 			case BOOL:
-				cx = cx.Bool(f.Key, f.Value.(bool))
+				cx = cx.Bool(f.Key, f.Integer == 1)
 			case INT:
-				cx = cx.Int(f.Key, f.Value.(int))
+				cx = cx.Int(f.Key, int(f.Integer))
 			case INT64:
-				cx = cx.Int64(f.Key, f.Value.(int64))
+				cx = cx.Int64(f.Key, f.Integer)
 			case STRING:
-				cx = cx.Str(f.Key, f.Value.(string))
+				cx = cx.Str(f.Key, f.String)
 			case FLOAT:
 				cx = cx.Float64(f.Key, f.Value.(float64))
 			case ERROR:
@@ -298,7 +298,7 @@ func NewZeroLogger(options ...ZeroLoggerOption) (Logger, error) {
 		writer:     os.Stdout,
 		withCaller: false,
 		withStack:  false,
-		fields:     make([]Field, 0),
+		fields:     []Field{String("logger", "zerolog")},
 	}
 
 	for _, ofn := range options {

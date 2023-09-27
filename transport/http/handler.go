@@ -126,8 +126,8 @@ func NoopMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
 	}
 }
 
-// Wrap wraps around middleware
-func Wrap(hn Handler, mws ...Middleware) Handler {
+// wrap wraps around middleware
+func wrap(hn Handler, mws ...Middleware) Handler {
 	var emws []endpoint.Middleware
 
 	for _, mw := range mws {
@@ -153,7 +153,7 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 		befores:      []BeforeFunc{},
 		afters:       []AfterFunc{},
 		options: []kit_http.ServerOption{
-			kit_http.ServerBefore(decorateContext),
+			kit_http.ServerErrorEncoder(kit_http.DefaultErrorEncoder),
 		},
 	}
 
@@ -174,7 +174,7 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 	var handler net_http.Handler
 	handler = kit_http.NewServer(
 		kit_endpoint.Endpoint(
-			Wrap(fn, hn.middlewares...),
+			wrap(fn, hn.middlewares...),
 		),
 		kit_http.DecodeRequestFunc(hn.decoder),
 		kit_http.EncodeResponseFunc(hn.encoder),

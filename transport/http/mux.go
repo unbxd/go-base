@@ -4,13 +4,12 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/mux"
 	gorilla_mux "github.com/gorilla/mux"
 )
 
-// Mux defines the standard Multiplexer for http Request
+// Muxer defines the standard Multiplexer for http Request
 type (
-	Mux interface {
+	Muxer interface {
 		// ServeHTTP
 		http.Handler
 
@@ -61,7 +60,7 @@ func (mx *chiMuxer) Handler(method, url string, fn http.Handler) {
 	mx.Method(method, url, fn)
 }
 
-func NewDefaultMux(opts ...DefaultMuxOption) Mux {
+func NewDefaultMux(opts ...DefaultMuxOption) Muxer {
 	mx := &chiMuxer{chi.NewMux()}
 	for _, o := range opts {
 		o(mx)
@@ -80,7 +79,7 @@ type (
 )
 
 func (gu *gmuxURLParser) Parse(r *http.Request) URLParams {
-	return mux.Vars(r)
+	return gorilla_mux.Vars(r)
 }
 
 func (gm *gmux) URLParser() URLParser {
@@ -91,4 +90,4 @@ func (gm *gmux) Handler(method, url string, fn http.Handler) {
 	gm.Router.Handle(url, fn).Methods(method)
 }
 
-func NewGorillaMux() Mux { return &gmux{gorilla_mux.NewRouter()} }
+func NewGorillaMux() Muxer { return &gmux{gorilla_mux.NewRouter()} }

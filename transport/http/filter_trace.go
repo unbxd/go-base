@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,7 +16,7 @@ func TraceLoggingFilter(logger log.Logger) Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			defer func() {
+			defer func(start time.Time) {
 				// calculate fields
 				fields := make([]log.Field, 0, 10)
 				// status-code
@@ -48,11 +49,14 @@ func TraceLoggingFilter(logger log.Logger) Filter {
 					}
 				}
 
+				fmt.Println(time.Since(start).Milliseconds())
+
+				fields = append(fields, log.String("latencys", time.Since(start).String()))
 				fields = append(fields, log.Int64("latency", time.Since(start).Milliseconds()))
 
 				// trace is same as info here
 				logger.Info(r.URL.RequestURI(), fields...)
-			}()
+			}(start)
 			next.ServeHTTP(w, r)
 		})
 	}

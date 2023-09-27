@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -54,12 +53,14 @@ func RequestIDFilter(headers ...string) Filter {
 	}
 }
 
+type RequestIDFormatter func(uuid string) string
+
 // CustomRequestIDFilter returns a HandlerOption for a customheader to be populated
 // with request id, generated at filter
 // Each Request by default should have `x-request-id` as it has been made
 // default of the Transport as a filter, this is only to set the same
 // value to different headers with a prefix & suffix
-func CustomRequestIDFilter(prefix, suffix string, customHeaders ...string) Filter {
+func CustomRequestIDFilter(formatter RequestIDFormatter, customHeaders ...string) Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(
 			w http.ResponseWriter,
@@ -70,26 +71,16 @@ func CustomRequestIDFilter(prefix, suffix string, customHeaders ...string) Filte
 				panic("failed to get request id, this shouldn't happen")
 			}
 
-			var idsb strings.Builder
-
-			if prefix != "" {
-				idsb.WriteString(prefix)
-				idsb.WriteRune('-')
-			}
-			idsb.WriteString(id)
-			if suffix != "" {
-				idsb.WriteRune('-')
-				idsb.WriteString(suffix)
-			}
+			id = formatter(id)
 
 			for _, ch := range customHeaders {
-				r.Header.Set(ch, idsb.String())
+				r.Header.Set(ch, id)
 			}
 
 			next.ServeHTTP(w, r)
 
 			for _, ch := range customHeaders {
-				w.Header().Set(ch, idsb.String())
+				w.Header().Set(ch, id)
 			}
 		})
 	}

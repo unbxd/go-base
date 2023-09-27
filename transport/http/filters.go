@@ -14,6 +14,18 @@ func Chain(inner http.Handler, filters ...Filter) http.Handler {
 	return filters[0](Chain(inner, filters[1:]...))
 }
 
+// ServerNameFilter is simple filter to set custom 'server' header for response
+func ServerNameFilter(name string, version string) Filter {
+	sn := name + "-" + version
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+			w.Header().Set("server", sn)
+		})
+	}
+}
+
+// CloserFilter is builtin that wraps filter chain
 func CloserFilter() Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +38,9 @@ func CloserFilter() Filter {
 	}
 }
 
+// DecorateContextFilter decorates the http.Request.Context() with
+// details about the http Request
+// List of keys can be found in http.go
 func DecorateContextFilter() Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(
@@ -33,11 +48,45 @@ func DecorateContextFilter() Filter {
 			r *http.Request,
 		) {
 			ctx := r.Context()
+
 			ctx = decorateContext(ctx, r)
 
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
 		})
+	}
+}
+
+// NoopFilter doesn't do anything
+func NoopFilter() Filter {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+			return
+		})
+	}
+}
+
+func heartbeatFilter(heartbeats []string) Filter {
+	paths := make(map[string]struct{}, len(heartbeats))
+	for _, hb := range heartbeats {
+		paths[hb] = struct{}{}
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet {
+					_, ok := paths[r.URL.Path]
+					if ok {
+						w.Header().Set("Content-Type", "text/plain")
+						w.WriteHeader(http.StatusOK)
+						w.Write([]byte("Ah, ha, ha, ha, stayin' alive, stayin' alive!"))
+						return
+					}
+				}
+				next.ServeHTTP(w, r)
+			})
 	}
 }

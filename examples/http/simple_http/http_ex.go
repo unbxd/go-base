@@ -8,6 +8,7 @@ import (
 	clog "log"
 	"math/rand"
 	net_http "net/http"
+	"time"
 
 	"github.com/unbxd/go-base/log"
 	"github.com/unbxd/go-base/transport/http"
@@ -51,23 +52,21 @@ func main() {
 	// 	http.WithFullDefaults()
 	//
 	// function, which has bunch of Options pre defined.
-	tr, err := http.NewTransport(
-		"0.0.0.0",
-		"4444",
-		http.WithMonitors([]string{"/health_check.html"}),
-		http.WithLogger(logger),
-		http.WithFullDefaults(),
-		http.WithErrorEncoder(errEncoder),
-		http.TransportWithFilter(http.PanicRecovery(logger)),
-		http.TransportWithFilter(func(handler net_http.Handler) net_http.Handler {
+
+	tr, err := http.NewHTTPTransport(
+		"gobi-example",
+		http.WithCustomHostPort("0.0.0.0", "4444"),
+		http.WithCustomLogger(logger),
+		http.WithDefaultTransportOptions(http.WithErrorEncoder(errEncoder)),
+		http.WithFilters(func(handler net_http.Handler) net_http.Handler {
 			return net_http.HandlerFunc(func(rw net_http.ResponseWriter, r *net_http.Request) {
-				r.Header.Add("handlers in order", "h1")
+				r.Header.Add("handlers-in-order-h1", "h1")
 				handler.ServeHTTP(rw, r)
 			})
 		}),
-		http.TransportWithFilter(func(handler net_http.Handler) net_http.Handler {
+		http.WithFilters(func(handler net_http.Handler) net_http.Handler {
 			return net_http.HandlerFunc(func(rw net_http.ResponseWriter, r *net_http.Request) {
-				r.Header.Add("handlers in order", "h2")
+				r.Header.Add("handlers-in-order-h2", "h2")
 				handler.ServeHTTP(rw, r)
 			})
 		}),
@@ -250,7 +249,7 @@ func main() {
 		req *net_http.Request,
 	) (*net_http.Response, error) {
 		params := http.Parameters(req)
-
+		time.Sleep(1 * time.Second)
 		return http.NewResponse(
 			req,
 			http.ResponseWithBytes(
