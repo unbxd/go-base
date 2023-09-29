@@ -33,49 +33,44 @@ type (
 
 func zerologEventFields(event *zerolog.Event, fields ...Field) *zerolog.Event {
 	for _, f := range fields {
-		if f.Value != nil {
-			switch f.Type {
-			case BOOL:
-				event = event.Bool(f.Key, f.Integer == 1)
-			case INT:
-				event = event.Int(f.Key, int(f.Integer))
-			case INT64:
-				event = event.Int64(f.Key, f.Integer)
-			case STRING:
-				event = event.Str(f.Key, f.String)
-			case FLOAT:
-				event = event.Float64(f.Key, f.Value.(float64))
-			case ERROR:
-				event = event.Err(f.Value.(error))
-			case UNKNOWN:
-				event = event.Any(f.Key, f.Value)
-			}
-		} else {
-			event = event.Any(f.Key, nil)
+		switch f.Type {
+		case BOOL:
+			event = event.Bool(f.Key, f.Integer == 1)
+		case INT:
+			event = event.Int(f.Key, int(f.Integer))
+		case INT64:
+			event = event.Int64(f.Key, f.Integer)
+		case STRING:
+			event = event.Str(f.Key, f.String)
+		case FLOAT:
+			event = event.Float64(f.Key, f.Value.(float64))
+		case ERROR:
+			event = event.Err(f.Value.(error))
+		case UNKNOWN:
+			event = event.Any(f.Key, f.Value)
 		}
 	}
+
 	return event
 }
 
 func zerologContextFields(cx zerolog.Context, fields ...Field) zerolog.Context {
 	for _, f := range fields {
-		if f.Value != nil {
-			switch f.Type {
-			case BOOL:
-				cx = cx.Bool(f.Key, f.Integer == 1)
-			case INT:
-				cx = cx.Int(f.Key, int(f.Integer))
-			case INT64:
-				cx = cx.Int64(f.Key, f.Integer)
-			case STRING:
-				cx = cx.Str(f.Key, f.String)
-			case FLOAT:
-				cx = cx.Float64(f.Key, f.Value.(float64))
-			case ERROR:
-				cx = cx.Err(f.Value.(error))
-			case UNKNOWN:
-				// do nothing
-			}
+		switch f.Type {
+		case BOOL:
+			cx = cx.Bool(f.Key, f.Integer == 1)
+		case INT:
+			cx = cx.Int(f.Key, int(f.Integer))
+		case INT64:
+			cx = cx.Int64(f.Key, f.Integer)
+		case STRING:
+			cx = cx.Str(f.Key, f.String)
+		case FLOAT:
+			cx = cx.Float64(f.Key, f.Value.(float64))
+		case ERROR:
+			cx = cx.Err(f.Value.(error))
+		case UNKNOWN:
+			// do nothing
 		}
 	}
 	return cx

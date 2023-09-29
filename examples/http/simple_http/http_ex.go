@@ -27,13 +27,11 @@ func main() {
 	// Typically this would be needed for any project where logging is needed.
 	// Logging is provided as direct implementation of
 	// log.Logger interface.
-	logger, err := log.NewZapLogger(
-		log.ZapWithLevel("debug"),
-		log.ZapWithEncoding("console"),
+	logger, err := log.NewZeroLogger(
+		log.ZeroLoggerWithLevel("debug"),
 	)
 	if err != nil {
-		// throw error in console log
-		clog.Fatal("Error init logging", err)
+		clog.Fatal("error init logging", err)
 	}
 
 	// Once we have defined log, we create a transport. Given that an
