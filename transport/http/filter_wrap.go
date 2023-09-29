@@ -164,7 +164,7 @@ func (f *http2FancyWriter) Push(target string, opts *http.PushOptions) error {
 var _ http.Flusher = &http2FancyWriter{}
 var _ http.Pusher = &http2FancyWriter{}
 
-func WrappedResponseWriterFilter() Filter {
+func wrappedResponseWriterFilter() Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w = NewWrapResponseWriter(w, r.ProtoMajor)

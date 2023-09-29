@@ -25,7 +25,8 @@ type (
 	// via `NewTransport`
 	config struct {
 		// server name
-		name string
+		name    string
+		version string
 
 		// server host & port
 		host string
@@ -55,25 +56,27 @@ type (
 		// is used
 		muxOptions []DefaultMuxOption
 
-		panicFormatterType PanicFormatterType
+		panicFormatter PanicFormatter
 	}
 
 	TransportConfigOption func(*config) error
 )
 
 func (c *config) filters() []Filter {
-	// default filters available by default
+	// default filters available by default to all routes
 	filters := []Filter{
-		CloserFilter(),                // closes the request
-		heartbeatFilter(c.heartbeats), // heartbeats for filter
-		WrappedResponseWriterFilter(), // wraps response for easy status access
-		PanicRecoveryFilter( // handles panic
+		closerFilter(), // closes the request
+		panicRecoveryFilter( // handles panic
 			c.logger,
-			WithFormatter(c.panicFormatterType),
-			WithStack(1024*8, false),
+			withCustomFormatter(c.panicFormatter),
+			withStack(1024*8, false),
 		),
-		RequestIDFilter(),
-		DecorateContextFilter(),
+		wrappedResponseWriterFilter(), // wraps response for easy status access
+		serverNameFilter(c.name, c.version),
+		requestIDFilter(),
+		decorateContextFilter(),
+		heartbeatFilter(c.name, c.heartbeats), // heartbeats for filter
+
 	}
 
 	if c.logging && c.traceLogging {
@@ -94,12 +97,11 @@ func (c *config) build() (*Transport, error) {
 		options: c.handlerOptions,
 	}
 
-	tr.Handler = Chain(tr.muxer, c.filters()...)
-
 	for _, fn := range c.transportOptions {
 		fn(tr)
 	}
 
+	tr.Handler = Chain(tr.muxer, c.filters()...)
 	return tr, nil
 }
 
@@ -113,6 +115,7 @@ func newConfig(name string) *config {
 
 	return &config{
 		name:             name,
+		version:          "v0.0.0",
 		host:             "0.0.0.0",
 		port:             "7001",
 		heartbeats:       []string{"/ping"},
@@ -127,9 +130,9 @@ func newConfig(name string) *config {
 		handlerOptions: []HandlerOption{
 			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
 		},
-		ffs:                []Filter{},
-		muxOptions:         []DefaultMuxOption{},
-		panicFormatterType: TextPanicFormatter,
+		ffs:            []Filter{},
+		muxOptions:     []DefaultMuxOption{},
+		panicFormatter: &textPanicFormatter{},
 	}
 }
 

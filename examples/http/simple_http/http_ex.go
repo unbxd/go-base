@@ -29,6 +29,7 @@ func main() {
 	// log.Logger interface.
 	logger, err := log.NewZeroLogger(
 		log.ZeroLoggerWithLevel("debug"),
+		log.ZeroLoggerWithCaller(),
 	)
 	if err != nil {
 		clog.Fatal("error init logging", err)
@@ -53,6 +54,7 @@ func main() {
 
 	tr, err := http.NewHTTPTransport(
 		"gobi-example",
+		http.WithVersion("v1.0.0"),
 		http.WithCustomHostPort("0.0.0.0", "4444"),
 		http.WithCustomLogger(logger),
 		http.WithDefaultTransportOptions(http.WithErrorEncoder(errEncoder)),
@@ -241,12 +243,15 @@ func main() {
 		return nil, errs[num]
 	})
 
+	parser := tr.Mux().URLParser()
+
 	// Another Example is of using URL parameters
 	tr.Get("/ping/{name}", func(
 		ctx context.Context,
 		req *net_http.Request,
 	) (*net_http.Response, error) {
-		params := http.Parameters(req)
+		params := parser.Parse(req)
+
 		time.Sleep(1 * time.Second)
 		return http.NewResponse(
 			req,

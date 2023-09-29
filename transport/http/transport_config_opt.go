@@ -11,6 +11,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+func WithVersion(version string) TransportConfigOption {
+	return func(c *config) (err error) {
+		c.version = version
+		return
+	}
+}
+
 func WithCustomHostPort(host, port string) TransportConfigOption {
 	return func(c *config) (err error) {
 		c.host = host
@@ -174,10 +181,23 @@ func WithFilters(filters ...Filter) TransportConfigOption {
 	}
 }
 
-// WithPanicFormatterType lets you configure what formatter type you have
-func WithPanicFormatterType(formatter PanicFormatterType) TransportConfigOption {
+func WithCustomPanicFormatter(formatter PanicFormatter) TransportConfigOption {
 	return func(c *config) (err error) {
-		c.panicFormatterType = formatter
+		c.panicFormatter = formatter
+		return
+	}
+}
+
+func WithDefaultPanicFormatter(panicFormatterType PanicFormatterType) TransportConfigOption {
+	return func(c *config) (err error) {
+		switch panicFormatterType {
+		case HTMLPanicFormatter:
+			c.panicFormatter = &htmlPanicFormatter{}
+		case TextPanicFormatter:
+			c.panicFormatter = &textPanicFormatter{}
+		default:
+			c.panicFormatter = &textPanicFormatter{}
+		}
 		return
 	}
 }

@@ -14,34 +14,35 @@ func Chain(inner http.Handler, filters ...Filter) http.Handler {
 	return filters[0](Chain(inner, filters[1:]...))
 }
 
-// ServerNameFilter is simple filter to set custom 'server' header for response
-func ServerNameFilter(name string, version string) Filter {
+// serverNameFilter is simple filter to set custom 'server' header for response
+func serverNameFilter(name string, version string) Filter {
 	sn := name + "-" + version
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
 			w.Header().Set("server", sn)
+			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// CloserFilter is builtin that wraps filter chain
-func CloserFilter() Filter {
+// closerFilter is builtin that wraps filter chain
+func closerFilter() Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				r.Body.Close()
 				r.Close = true
 			}()
+
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// DecorateContextFilter decorates the http.Request.Context() with
+// decorateContextFilter decorates the http.Request.Context() with
 // details about the http Request
 // List of keys can be found in http.go
-func DecorateContextFilter() Filter {
+func decorateContextFilter() Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(
 			w http.ResponseWriter,
@@ -63,16 +64,17 @@ func NoopFilter() Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
-			return
 		})
 	}
 }
 
-func heartbeatFilter(heartbeats []string) Filter {
+func heartbeatFilter(name string, heartbeats []string) Filter {
 	paths := make(map[string]struct{}, len(heartbeats))
 	for _, hb := range heartbeats {
 		paths[hb] = struct{}{}
 	}
+
+	message := name + " :: Ah, ha, ha, ha, stayin' alive, stayin' alive!"
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
@@ -82,7 +84,7 @@ func heartbeatFilter(heartbeats []string) Filter {
 					if ok {
 						w.Header().Set("Content-Type", "text/plain")
 						w.WriteHeader(http.StatusOK)
-						w.Write([]byte("Ah, ha, ha, ha, stayin' alive, stayin' alive!"))
+						w.Write([]byte(message))
 						return
 					}
 				}

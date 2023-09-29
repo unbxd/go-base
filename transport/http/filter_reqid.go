@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func RequestIDFilter(headers ...string) Filter {
+func requestIDFilter(headers ...string) Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(
 			w http.ResponseWriter,
@@ -15,23 +15,19 @@ func RequestIDFilter(headers ...string) Filter {
 			switch {
 			// case where requestId is sent by upstream
 			case r.Header.Get(HeaderRequestID) != "" && len(headers) == 0:
-				next.ServeHTTP(w, r)
 				w.Header().Set(HeaderRequestID, r.Header.Get(HeaderRequestID))
-				return
+				next.ServeHTTP(w, r)
 			// case where requestId is sent by upstream and we write bunch of other headers
 			case r.Header.Get(HeaderRequestID) != "" && len(headers) > 0:
 				id := r.Header.Get(HeaderRequestID)
 				for _, h := range headers {
 					r.Header.Set(h, id)
 				}
-
-				next.ServeHTTP(w, r)
-
 				w.Header().Set(HeaderRequestID, id)
 				for _, h := range headers {
 					w.Header().Set(h, id)
 				}
-				return
+				next.ServeHTTP(w, r)
 			// case where we need to generate requestId
 			default:
 				id := uuid.NewString()
@@ -41,13 +37,13 @@ func RequestIDFilter(headers ...string) Filter {
 					r.Header.Set(h, id)
 				}
 
-				next.ServeHTTP(w, r)
-
 				w.Header().Set(HeaderRequestID, id)
+
 				for _, h := range headers {
 					w.Header().Set(h, id)
 				}
-				return
+
+				next.ServeHTTP(w, r)
 			}
 		})
 	}
@@ -77,11 +73,11 @@ func CustomRequestIDFilter(formatter RequestIDFormatter, customHeaders ...string
 				r.Header.Set(ch, id)
 			}
 
-			next.ServeHTTP(w, r)
-
 			for _, ch := range customHeaders {
 				w.Header().Set(ch, id)
 			}
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }

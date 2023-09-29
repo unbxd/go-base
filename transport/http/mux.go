@@ -34,6 +34,10 @@ func (up URLParams) Param(key string) (value string, found bool) {
 	return
 }
 
+func (up URLParams) ByName(key string) (value string) {
+	return up[key]
+}
+
 // go-chi muxer which is default multiplexer for go-base
 type (
 	chiMuxer         struct{ *chi.Mux }

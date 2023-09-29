@@ -38,7 +38,7 @@ type (
 	// PanicCallback gives a callback option to handle Panic with details
 	PanicCallback func(*PanicInformation)
 
-	Recovery struct {
+	recovery struct {
 		returnStack bool
 
 		stackSize   int
@@ -48,7 +48,7 @@ type (
 		formatter PanicFormatter
 	}
 
-	RecoveryOption func(*Recovery)
+	RecoveryOption func(*recovery)
 )
 
 // PanicInformation
@@ -103,7 +103,7 @@ func newHtmlPanicFormatter() PanicFormatter {
 	return &htmlPanicFormatter{tt}
 }
 
-func (rec *Recovery) HandlerFunc(
+func (rec *recovery) HandlerFunc(
 	next http.Handler,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -152,46 +152,46 @@ func (rec *Recovery) HandlerFunc(
 	}
 }
 
-func WithTextFormatter() RecoveryOption {
-	return func(r *Recovery) { r.formatter = newTextPanicFormatter() }
+func withTextFormatter() RecoveryOption {
+	return func(r *recovery) { r.formatter = newTextPanicFormatter() }
 }
 
-func WithHTMLFormatter() RecoveryOption {
-	return func(r *Recovery) { r.formatter = newHtmlPanicFormatter() }
+func withHTMLFormatter() RecoveryOption {
+	return func(r *recovery) { r.formatter = newHtmlPanicFormatter() }
 }
 
-func WithCustomFormatter(formatter PanicFormatter) RecoveryOption {
-	return func(r *Recovery) { r.formatter = formatter }
+func withCustomFormatter(formatter PanicFormatter) RecoveryOption {
+	return func(r *recovery) { r.formatter = formatter }
 }
 
-func WithStack(stackSize int, stackOtherGoroutines bool) RecoveryOption {
-	return func(r *Recovery) {
+func withStack(stackSize int, stackOtherGoroutines bool) RecoveryOption {
+	return func(r *recovery) {
 		r.returnStack = true
 		r.stackSize = stackSize
 		r.stackOthers = false
 	}
 }
 
-func WithFormatter(formatterType PanicFormatterType) RecoveryOption {
-	return func(r *Recovery) {
+func withFormatterType(formatterType PanicFormatterType) RecoveryOption {
+	return func(r *recovery) {
 		switch formatterType {
 		case TextPanicFormatter:
-			WithTextFormatter()(r)
+			withTextFormatter()(r)
 		case HTMLPanicFormatter:
-			WithHTMLFormatter()(r)
+			withHTMLFormatter()(r)
 		}
 	}
 }
 
-func WithoutStack() RecoveryOption {
-	return func(r *Recovery) { r.returnStack = false; r.stackOthers = false }
+func withoutStack() RecoveryOption {
+	return func(r *recovery) { r.returnStack = false; r.stackOthers = false }
 }
 
 func NewRecovery(
 	logger log.Logger,
 	options ...RecoveryOption,
-) *Recovery {
-	r := &Recovery{
+) *recovery {
+	r := &recovery{
 		returnStack: false,
 		stackSize:   1024 * 8,
 		stackOthers: false,
@@ -203,10 +203,14 @@ func NewRecovery(
 		o(r)
 	}
 
+	if r.formatter == nil {
+		r.formatter = &textPanicFormatter{}
+	}
+
 	return r
 }
 
-func PanicRecoveryFilter(logger log.Logger, options ...RecoveryOption) Filter {
+func panicRecoveryFilter(logger log.Logger, options ...RecoveryOption) Filter {
 	recovery := NewRecovery(logger, options...)
 
 	return func(next http.Handler) http.Handler {

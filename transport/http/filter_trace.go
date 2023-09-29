@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -48,8 +47,6 @@ func TraceLoggingFilter(logger log.Logger) Filter {
 						fields = append(fields, log.String(k, str))
 					}
 				}
-
-				fmt.Println(time.Since(start).Milliseconds())
 
 				fields = append(fields, log.String("latencys", time.Since(start).String()))
 				fields = append(fields, log.Int64("latency", time.Since(start).Milliseconds()))
