@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	gbmetrics "github.com/unbxd/go-base/utils/metrics"
+	gbmetrics "github.com/unbxd/go-base/metrics"
 	"github.com/unbxd/hystrix-go/hystrix/metric"
 )
 
@@ -78,7 +78,7 @@ func (mc *metricsCollector) Update(r metric.Result) {
 func (mc *metricsCollector) Reset() {}
 
 // NewMetricsCollector returns a wrapped collector for go-base/utils/metrics.Metrics
-func NewMetricsCollector(metrics gbmetrics.Metrics) func(string) metric.Collector {
+func NewMetricsCollector(metrics gbmetrics.Provider) func(string) metric.Collector {
 	collector := &metricsCollector{
 		attemptsCounter:          metrics.NewCounter(Attempts, 1.0),
 		errorsCounter:            metrics.NewCounter(Errors, 1.0),

@@ -6,12 +6,12 @@ import (
 	"sync"
 
 	"github.com/DataDog/datadog-go/statsd"
-	"github.com/unbxd/go-base/kit/endpoint"
+	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/metrics"
 	cbplugins "github.com/unbxd/go-base/net/cb/plugins"
-	"github.com/unbxd/go-base/utils/log"
-	"github.com/unbxd/go-base/utils/metrics"
 
-	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/errors"
 	"github.com/unbxd/hystrix-go/hystrix"
 	"github.com/unbxd/hystrix-go/hystrix/metric"
 	"github.com/unbxd/hystrix-go/plugins"
@@ -254,7 +254,7 @@ func WithDatadogClient(client *statsd.Client) BreakerOption {
 }
 
 // WithMetricsCollector sets the breaker with go-base metrics event emitter
-func WithMetricsCollector(metrics metrics.Metrics) BreakerOption {
+func WithMetricsCollector(metrics metrics.Provider) BreakerOption {
 	return func(tp *Breaker) error {
 		metric.Registry.Register(
 			cbplugins.NewMetricsCollector(metrics),
