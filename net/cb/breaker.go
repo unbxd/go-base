@@ -11,7 +11,7 @@ import (
 	"github.com/unbxd/go-base/metrics"
 	cbplugins "github.com/unbxd/go-base/net/cb/plugins"
 
-	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/errors"
 	"github.com/unbxd/hystrix-go/hystrix"
 	"github.com/unbxd/hystrix-go/hystrix/metric"
 	"github.com/unbxd/hystrix-go/plugins"

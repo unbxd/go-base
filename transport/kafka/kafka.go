@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/transport"
-	"github.com/pkg/errors"
 	kafgo "github.com/segmentio/kafka-go"
+	"github.com/unbxd/go-base/errors"
 )
 
 type (

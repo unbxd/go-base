@@ -1,10 +1,10 @@
 package redis
 
 /**
-	Please Note: We use github.com/go-redis/redis/v9 in this repository
+	Please Note: We use github.com/redis/go-redis/v9 in this repository
 	which doesn't support redis version older than 7.
 
-	To puse this implementation of cache, use redis 7+.
+	To use this implementation of cache, use redis 7+.
 **/
 
 import (
@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"time"
 
-	redis "github.com/go-redis/redis/v9"
+	redis "github.com/redis/go-redis/v9"
 	"github.com/unbxd/go-base/log"
 )
 

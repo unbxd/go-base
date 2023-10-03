@@ -17,7 +17,7 @@ func Join(errors ...error) error    { return builtin_errors.Join(errors...) }
 func Unwrap(err error) error        { return builtin_errors.Unwrap(err) }
 func New(msg string) error          { return builtin_errors.New(msg) }
 
-// Method from github.com/pkg/errors
+// Method from github.com/unbxd/go-base/errors
 func Wrap(err error, str string) error { return fmt.Errorf(str+": [%w]", err) }
 func Cause(err error) error            { return builtin_errors.Unwrap(err) }
 func Wrapf(err error, fmtstr string, args ...interface{}) error {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/errors"
 	"github.com/unbxd/go-base/log"
 )
 

@@ -2,9 +2,10 @@ package zk
 
 import (
 	"context"
-	"github.com/go-kit/kit/transport"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/go-kit/kit/transport"
+	"github.com/unbxd/go-base/errors"
 )
 
 type (

@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/unbxd/go-base/data/driver"
+	"github.com/unbxd/go-base/errors"
 )
 
 type (

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	natn "github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
 	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/errors"
 )
 
 type (

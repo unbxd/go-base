@@ -7,7 +7,7 @@ import (
 
 	"github.com/unbxd/go-base/log"
 
-	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/errors"
 )
 
 // Validator Errors

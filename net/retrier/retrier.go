@@ -9,7 +9,7 @@ import (
 	"github.com/unbxd/go-base/endpoint"
 	"github.com/unbxd/go-base/log"
 
-	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/errors"
 	"github.com/unbxd/hystrix-go/hystrix"
 )
 

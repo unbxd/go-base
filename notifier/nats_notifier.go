@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/errors"
 	"github.com/unbxd/go-base/log"
 	"github.com/unbxd/go-base/transport/nats"
 )

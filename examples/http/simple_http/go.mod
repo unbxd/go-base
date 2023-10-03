@@ -24,7 +24,6 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.30.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.44.0 // indirect
 	go.opentelemetry.io/otel v1.18.0 // indirect
@@ -34,5 +33,4 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

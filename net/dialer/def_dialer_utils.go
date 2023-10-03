@@ -7,7 +7,7 @@ import (
 	"time"
 
 	khttp "github.com/go-kit/kit/transport/http"
-	"github.com/pkg/errors"
+	"github.com/unbxd/go-base/errors"
 )
 
 func fnc(o, n int) int {
