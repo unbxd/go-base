@@ -66,10 +66,10 @@ func (c *config) filters() []Filter {
 	// default filters available by default to all routes
 	filters := []Filter{
 		closerFilter(), // closes the request
-		panicRecoveryFilter( // handles panic
+		PanicRecoveryFilter( // handles panic
 			c.logger,
-			withCustomFormatter(c.panicFormatter),
-			withStack(1024*8, false),
+			WithCustomFormatter(c.panicFormatter),
+			WithStack(1024*8, false),
 		),
 		wrappedResponseWriterFilter(), // wraps response for easy status access
 		serverNameFilter(c.name, c.version),
@@ -142,7 +142,11 @@ func NewHTTPTransport(
 	cfg := newConfig(name)
 
 	for _, ofn := range options {
-		ofn(cfg)
+		er := ofn(cfg)
+
+		if er != nil {
+			return nil, er
+		}
 	}
 
 	return cfg.build()

@@ -82,7 +82,7 @@ func newTextPanicFormatter() PanicFormatter { return &textPanicFormatter{} }
 // htmlFormatter
 func (html *htmlPanicFormatter) Format(w http.ResponseWriter, r *http.Request, info *PanicInformation) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	html.template.Execute(w, info)
+	_ = html.template.Execute(w, info)
 }
 
 func newHtmlPanicFormatter() PanicFormatter {
@@ -152,19 +152,19 @@ func (rec *recovery) HandlerFunc(
 	}
 }
 
-func withTextFormatter() RecoveryOption {
+func WithTextFormatter() RecoveryOption {
 	return func(r *recovery) { r.formatter = newTextPanicFormatter() }
 }
 
-func withHTMLFormatter() RecoveryOption {
+func WithHTMLFormatter() RecoveryOption {
 	return func(r *recovery) { r.formatter = newHtmlPanicFormatter() }
 }
 
-func withCustomFormatter(formatter PanicFormatter) RecoveryOption {
+func WithCustomFormatter(formatter PanicFormatter) RecoveryOption {
 	return func(r *recovery) { r.formatter = formatter }
 }
 
-func withStack(stackSize int, stackOtherGoroutines bool) RecoveryOption {
+func WithStack(stackSize int, stackOtherGoroutines bool) RecoveryOption {
 	return func(r *recovery) {
 		r.returnStack = true
 		r.stackSize = stackSize
@@ -172,18 +172,18 @@ func withStack(stackSize int, stackOtherGoroutines bool) RecoveryOption {
 	}
 }
 
-func withFormatterType(formatterType PanicFormatterType) RecoveryOption {
+func WithFormatterType(formatterType PanicFormatterType) RecoveryOption {
 	return func(r *recovery) {
 		switch formatterType {
 		case TextPanicFormatter:
-			withTextFormatter()(r)
+			WithTextFormatter()(r)
 		case HTMLPanicFormatter:
-			withHTMLFormatter()(r)
+			WithHTMLFormatter()(r)
 		}
 	}
 }
 
-func withoutStack() RecoveryOption {
+func WithoutStack() RecoveryOption {
 	return func(r *recovery) { r.returnStack = false; r.stackOthers = false }
 }
 
@@ -210,7 +210,7 @@ func NewRecovery(
 	return r
 }
 
-func panicRecoveryFilter(logger log.Logger, options ...RecoveryOption) Filter {
+func PanicRecoveryFilter(logger log.Logger, options ...RecoveryOption) Filter {
 	recovery := NewRecovery(logger, options...)
 
 	return func(next http.Handler) http.Handler {

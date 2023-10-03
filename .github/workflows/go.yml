@@ -81,6 +81,6 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.45.2
+          version: v1.54.2
           working-directory: .
           # args: -D varnamelen

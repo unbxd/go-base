@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	net_http "net/http"
 )
 
@@ -15,7 +14,7 @@ type ResponseOption func(*net_http.Response)
 // with Bytes data
 func ResponseWithBytes(bt []byte) ResponseOption {
 	return func(res *net_http.Response) {
-		res.Body = ioutil.NopCloser(bytes.NewReader(bt))
+		res.Body = io.NopCloser(bytes.NewReader(bt))
 	}
 }
 
@@ -32,7 +31,7 @@ func ResponseWithCode(code int) ResponseOption {
 // of the response with a custom reader
 func ResponseWithReader(reader io.Reader) ResponseOption {
 	return func(res *net_http.Response) {
-		res.Body = ioutil.NopCloser(reader)
+		res.Body = io.NopCloser(reader)
 	}
 }
 

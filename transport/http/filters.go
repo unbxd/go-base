@@ -84,7 +84,7 @@ func heartbeatFilter(name string, heartbeats []string) Filter {
 					if ok {
 						w.Header().Set("Content-Type", "text/plain")
 						w.WriteHeader(http.StatusOK)
-						w.Write([]byte(message))
+						_, _ = w.Write([]byte(message))
 						return
 					}
 				}
