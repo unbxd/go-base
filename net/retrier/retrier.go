@@ -6,10 +6,10 @@ import (
 	net_http "net/http"
 	"time"
 
-	"github.com/unbxd/go-base/v2/endpoint"
-	"github.com/unbxd/go-base/v2/log"
+	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/log"
 
-	"github.com/unbxd/go-base/v2/errors"
+	"github.com/unbxd/go-base/errors"
 	"github.com/unbxd/hystrix-go/hystrix"
 )
 

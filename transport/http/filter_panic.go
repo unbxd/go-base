@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime"
 
-	"github.com/unbxd/go-base/v2/log"
+	"github.com/unbxd/go-base/log"
 )
 
 const (

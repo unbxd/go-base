@@ -1,4 +1,4 @@
-module github.com/unbxd/go-base/v2
+module github.com/unbxd/go-base
 
 go 1.21
 

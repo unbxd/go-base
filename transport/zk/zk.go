@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/transport"
-	"github.com/unbxd/go-base/v2/errors"
+	"github.com/unbxd/go-base/errors"
 )
 
 type (

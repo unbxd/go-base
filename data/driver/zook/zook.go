@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
-	"github.com/unbxd/go-base/v2/data/driver"
-	"github.com/unbxd/go-base/v2/errors"
+	"github.com/unbxd/go-base/data/driver"
+	"github.com/unbxd/go-base/errors"
 )
 
 type (
