@@ -60,6 +60,13 @@ func TestWrapWithIs(t *testing.T) {
 					t.Errorf("Wrap() error = %v, wantErr %v", err, tt.want)
 				}
 
+				if Cause(err) != tt.args.err {
+					t.Errorf("Cause() error = %v, wantErr %v", err, tt.args.err)
+				}
+
+				if e := Unwrap(err); e != tt.args.err {
+					t.Errorf("Unwrap() error = %v, wantErr %v", err, tt.args.err)
+				}
 			},
 		)
 	}
@@ -84,4 +91,46 @@ func TestWrapWithIs(t *testing.T) {
 		})
 	}
 
+}
+
+func TestWith(t *testing.T) {
+	e1 := New("err 1")
+	e2 := New("err 2")
+	e3 := New("err 3")
+	e4 := New("err 4")
+	e5 := New("err 5")
+
+	type args struct {
+		err  error
+		errs []error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		is      error
+		cause   error
+	}{
+		// TODO: Add test cases.
+		{"join test", args{e1, []error{e2, e3}}, true, e2, e1},
+		{"join test 2", args{e1, []error{e4, e5}}, true, e5, e1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := With(tt.args.err, tt.args.errs...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("With() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !Is(err, tt.is) {
+				t.Errorf("Is() error = %v, wantErr %v", err, tt.is)
+			}
+
+			ec := Cause(err)
+			if ec != tt.cause {
+				t.Errorf("Cause() error = %v, wantErr %v", err, tt.cause)
+			}
+
+		})
+	}
 }
