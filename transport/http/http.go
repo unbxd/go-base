@@ -4,7 +4,7 @@ import (
 	"context"
 	net_http "net/http"
 
-	"github.com/unbxd/go-base/errors"
+	"github.com/unbxd/go-base/v2/errors"
 )
 
 // ContextKey is key for context

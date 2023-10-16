@@ -7,7 +7,7 @@ import (
 
 	kit_endpoint "github.com/go-kit/kit/endpoint"
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/unbxd/go-base/endpoint"
+	"github.com/unbxd/go-base/v2/endpoint"
 )
 
 type (

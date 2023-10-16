@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/log"
 )
 
 // TraceLoggingFilter supersedes `NewTraceLoggerFinalizerHandlerOption` as this

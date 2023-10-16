@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/unbxd/go-base/log"
-	"github.com/unbxd/go-base/metrics"
+	"github.com/unbxd/go-base/v2/log"
+	"github.com/unbxd/go-base/v2/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"

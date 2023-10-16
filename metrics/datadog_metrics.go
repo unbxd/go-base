@@ -10,7 +10,7 @@ import (
 	"github.com/go-kit/kit/metrics/dogstatsd"
 	kitlogger "github.com/go-kit/log"
 	"github.com/mitchellh/mapstructure"
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/log"
 )
 
 type (
