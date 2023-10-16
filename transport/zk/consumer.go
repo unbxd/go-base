@@ -7,11 +7,11 @@ import (
 
 	"github.com/go-kit/kit/transport"
 	"github.com/samuel/go-zookeeper/zk"
-	"github.com/unbxd/go-base/data/driver"
-	"github.com/unbxd/go-base/data/driver/zook"
-	"github.com/unbxd/go-base/endpoint"
-	"github.com/unbxd/go-base/errors"
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/data/driver"
+	"github.com/unbxd/go-base/v2/data/driver/zook"
+	"github.com/unbxd/go-base/v2/endpoint"
+	"github.com/unbxd/go-base/v2/errors"
+	"github.com/unbxd/go-base/v2/log"
 )
 
 const (

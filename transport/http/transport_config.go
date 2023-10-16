@@ -5,7 +5,7 @@ import (
 	"time"
 
 	kit_http "github.com/go-kit/kit/transport/http"
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/log"
 )
 
 type (

@@ -43,7 +43,7 @@ func Join(errors ...error) error    { return builtin_errors.Join(errors...) }
 func Unwrap(err error) error        { return builtin_errors.Unwrap(err) }
 func New(msg string) error          { return builtin_errors.New(msg) }
 
-// Method from github.com/unbxd/go-base/errors
+// Method from github.com/unbxd/go-base/v2/errors
 func Wrap(err error, message string) error {
 	if err == nil {
 		return nil
