@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/unbxd/go-base/errors"
-	"github.com/unbxd/go-base/log"
-	"github.com/unbxd/go-base/transport/nats"
+	"github.com/unbxd/go-base/v2/errors"
+	"github.com/unbxd/go-base/v2/log"
+	"github.com/unbxd/go-base/v2/transport/nats"
 )
 
 type (

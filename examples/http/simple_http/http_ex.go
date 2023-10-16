@@ -10,8 +10,8 @@ import (
 	net_http "net/http"
 	"time"
 
-	"github.com/unbxd/go-base/log"
-	"github.com/unbxd/go-base/transport/http"
+	"github.com/unbxd/go-base/v2/log"
+	"github.com/unbxd/go-base/v2/transport/http"
 )
 
 /*

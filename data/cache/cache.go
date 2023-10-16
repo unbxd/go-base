@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/unbxd/go-base/data/cache/inmem"
-	"github.com/unbxd/go-base/data/cache/redis"
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/data/cache/inmem"
+	"github.com/unbxd/go-base/v2/data/cache/redis"
+	"github.com/unbxd/go-base/v2/log"
 )
 
 type Cache interface {

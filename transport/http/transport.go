@@ -5,7 +5,7 @@ import (
 	http "net/http"
 	"time"
 
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/log"
 )
 
 type (

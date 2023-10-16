@@ -1,12 +1,12 @@
-module github.com/unbxd/go-base/exmple/http/simple_http
+module github.com/unbxd/go-base/v2/exmple/http/simple_http
 
 go 1.21
 
 toolchain go1.21.1
 
-require github.com/unbxd/go-base v1.2.9
+require github.com/unbxd/go-base/v2 v1.2.9
 
-replace github.com/unbxd/go-base => ../../../
+replace github.com/unbxd/go-base/v2 => ../../../
 
 require (
 	github.com/VividCortex/gohistogram v1.0.0 // indirect

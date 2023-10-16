@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/transport"
 	kafgo "github.com/segmentio/kafka-go"
-	"github.com/unbxd/go-base/errors"
+	"github.com/unbxd/go-base/v2/errors"
 )
 
 type (

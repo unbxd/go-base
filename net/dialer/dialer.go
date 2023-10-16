@@ -3,17 +3,17 @@ package dialer
 import (
 	"context"
 	"net/http"
-	net_http "net/http"
 
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/log"
 
-	"github.com/unbxd/go-base/errors"
+	"github.com/unbxd/go-base/v2/errors"
 )
 
 // Validator Errors
 var (
 	ErrInternalServer = errors.New("internal server error, response code > 500")
 	ErrNotFound       = errors.New("resource not found, response code = 404")
+	ErrDialer         = errors.New("dialer Error")
 )
 
 /*
@@ -24,8 +24,8 @@ type (
 	Dialer interface {
 		Dial(
 			context.Context,
-			*net_http.Request,
-		) (*net_http.Response, error)
+			*http.Request,
+		) (*http.Response, error)
 	}
 )
 
@@ -37,7 +37,7 @@ type (
 	RequestOption func(context.Context, *http.Request)
 
 	// ResponseOption ...
-	ResponseOption func(context.Context, *http.Response)
+	ResponseOption func(context.Context, *http.Request, *http.Response)
 )
 
 // NewDialer ...
@@ -49,6 +49,8 @@ func NewDialer(logger log.Logger, opts ...Option) (Dialer, error) {
 		resopts: []ResponseOption{},
 		vals:    []validator{},
 	}
+
+	opts = append([]Option{WithDefaultExecutor()}, opts...)
 
 	for _, o := range opts {
 		err := o(dd)
@@ -83,9 +85,4 @@ func NewTimedDialer(logger log.Logger, conf *Conf) (Dialer, error) {
 		WithRoundTripperExecutor(conf),
 		WithTimeoutExecutor(&conf.To),
 	)
-}
-
-// dialerError returns an error with context right after sending it to APM
-func dialerError(cx context.Context, err error, msg string) error {
-	return errors.Wrap(err, msg)
 }

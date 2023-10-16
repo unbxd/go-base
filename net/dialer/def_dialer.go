@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/unbxd/go-base/log"
+	"github.com/unbxd/go-base/v2/log"
 
-	"github.com/unbxd/go-base/errors"
+	"github.com/unbxd/go-base/v2/errors"
 )
 
 // Error response
@@ -60,15 +60,13 @@ func (dd *defaultDialer) Dial(
 	for _, fn := range dd.vals {
 		er := fn(cx, req, res, err)
 		if er != nil {
-			return res, dialerError(
-				cx, er, "validation failed",
-			)
+			return res, errors.Join(ErrDialer, er)
 		}
 	}
 
 	// if all looks good, decorate response
 	for _, fn := range dd.resopts {
-		fn(cx, res)
+		fn(cx, req, res)
 	}
 
 	return
