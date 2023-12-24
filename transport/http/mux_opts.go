@@ -4,17 +4,17 @@ import "net/http"
 
 // Default Multiplexer Options
 
-// MethodNotAllowedMuxOption sets a custom http.HandlerFunc to handle
+// MethodNotAllowedChiMuxOption sets a custom http.HandlerFunc to handle
 // '405' errors in URL Paths
-func MethodNotAllowedMuxOption(handlerFunc http.HandlerFunc) DefaultMuxOption {
+func MethodNotAllowedChiMuxOption(handlerFunc http.HandlerFunc) ChiMuxOption {
 	return func(cm *chiMuxer) {
 		cm.MethodNotAllowed(handlerFunc)
 	}
 }
 
-// NotFoundHandlerMuxOption sets a custom http.HandlerFunc to handle
+// NotFoundHandlerChiMuxOption sets a custom http.HandlerFunc to handle
 // '404' errors when the URL is incorrect
-func NotFoundHandlerMuxOption(handlerFunc http.HandlerFunc) DefaultMuxOption {
+func NotFoundHandlerChiMuxOption(handlerFunc http.HandlerFunc) ChiMuxOption {
 	return func(cm *chiMuxer) {
 		cm.NotFound(handlerFunc)
 	}

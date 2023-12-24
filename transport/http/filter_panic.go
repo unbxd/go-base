@@ -187,7 +187,7 @@ func WithoutStack() RecoveryOption {
 	return func(r *recovery) { r.returnStack = false; r.stackOthers = false }
 }
 
-func NewRecovery(
+func newRecovery(
 	logger log.Logger,
 	options ...RecoveryOption,
 ) *recovery {
@@ -210,8 +210,8 @@ func NewRecovery(
 	return r
 }
 
-func PanicRecoveryFilter(logger log.Logger, options ...RecoveryOption) Filter {
-	recovery := NewRecovery(logger, options...)
+func panicRecoveryFilter(logger log.Logger, options ...RecoveryOption) Filter {
+	recovery := newRecovery(logger, options...)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(recovery.HandlerFunc(next))

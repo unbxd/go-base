@@ -14,8 +14,8 @@ type ErrorEncoder func(context.Context, error, net_http.ResponseWriter)
 // by the request
 func WithErrorEncoder(fn ErrorEncoder) TransportOption {
 	return func(tr *Transport) {
-		tr.options = append(
-			tr.options, NewErrorEncoderHandlerOptions(fn),
+		tr.handlerOptions = append(
+			tr.handlerOptions, NewErrorEncoderHandlerOptions(fn),
 		)
 	}
 }

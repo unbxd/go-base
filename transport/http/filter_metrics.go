@@ -10,13 +10,12 @@ import (
 	"github.com/unbxd/go-base/v2/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type SpanNameFormatter func(operation string, r *http.Request) string
 
-func defaultSpanNameFormatter(operation string, r *http.Request) string {
+func DefaultSpanNameFormatter(operation string, r *http.Request) string {
 	// we will only get this if chi is the router
 	var (
 		sb  strings.Builder
@@ -35,7 +34,7 @@ func defaultSpanNameFormatter(operation string, r *http.Request) string {
 	return sb.String()
 }
 
-// OpenTelemetryFilterForDefaultMux uses OpenTelemetry to publish events
+// OpenTelemetryFilter uses OpenTelemetry to publish events
 // There are multiple providers for OpenTelemetry that can be used
 // A simple example of using this filter is by just setting this up in the
 // filter chain and in the application, set the provider
@@ -52,14 +51,13 @@ func defaultSpanNameFormatter(operation string, r *http.Request) string {
 //		defer provider.Shutdown()
 //		otel.SetTracerProvider(provider)
 //	}
-func OpenTelemetryFilterForDefaultMux(
+func OpenTelemetryFilter(
 	namespace string,
+	provider OpenTelemetryProvider,
 	tags []KeyValue,
-	meterProvider metric.MeterProvider,
-	traceProvider trace.TracerProvider,
-	filters ...otelhttp.Filter,
+	filters ...OpenTelemetryRequestFilter,
 ) Filter {
-	formatter := defaultSpanNameFormatter
+	formatter := DefaultSpanNameFormatter
 	attribs := make([]attribute.KeyValue, 0)
 
 	for _, kv := range tags {
@@ -69,7 +67,7 @@ func OpenTelemetryFilterForDefaultMux(
 	options := []otelhttp.Option{}
 
 	for _, fn := range filters {
-		options = append(options, otelhttp.WithFilter(fn))
+		options = append(options, otelhttp.WithFilter(otelhttp.Filter(fn)))
 	}
 
 	options = append(options, []otelhttp.Option{
@@ -78,8 +76,8 @@ func OpenTelemetryFilterForDefaultMux(
 			trace.WithNewRoot(),
 			trace.WithAttributes(attribs...),
 		),
-		otelhttp.WithMeterProvider(meterProvider),
-		otelhttp.WithTracerProvider(traceProvider),
+		otelhttp.WithMeterProvider(provider),
+		otelhttp.WithTracerProvider(provider),
 	}...)
 
 	// this is slightly in-efficient that we are double wrapping
@@ -98,67 +96,68 @@ func OpenTelemetryFilterForDefaultMux(
 
 type MetricsNameFormatter func(namespace string, r *http.Request) string
 
-func CustomMetricsForDefaultMuxFilter(namespace string, provider metrics.Provider, formatter MetricsNameFormatter, tagss ...KeyValue) Filter {
-	var (
-		counters   = make(map[string]metrics.Counter)
-		histograms = make(map[string]metrics.Histogram)
-		tt         = []string{}
-	)
+type MetricsTagGenerator func(rw WrapResponseWriter, req *http.Request) []KeyValue
 
-	for _, kv := range tagss {
-		tt = append(tt, kv.Key)
-		tt = append(tt, kv.Value)
+func DefaultMetricsNameFormatter(namespace string, r *http.Request) string {
+	rcx := chi.RouteContext(r.Context())
+	if rcx == nil {
+		return namespace + ".not-chi"
 	}
 
+	var sb strings.Builder
+
+	rpt := rcx.RoutePattern()
+
+	sb.WriteString(namespace)
+	sb.WriteRune('.')
+	sb.WriteString(strings.ReplaceAll(rpt, "/", "_"))
+
+	return sb.String()
+}
+
+func CustomMetricsFilter(
+	namespace string,
+	provider metrics.Provider,
+	formatter MetricsNameFormatter,
+	tagsGenerators ...MetricsTagGenerator,
+) Filter {
+	var (
+		// counters   = make(map[string]metrics.Counter)
+		histograms = make(map[string]metrics.Histogram)
+	)
+
 	if formatter == nil {
-		formatter = func(namespace string, r *http.Request) string {
-			rcx := chi.RouteContext(r.Context())
-			if rcx == nil {
-				return namespace + ".not-chi"
-			}
-
-			var sb strings.Builder
-
-			rpt := rcx.RoutePattern()
-
-			sb.WriteString(namespace)
-			sb.WriteRune('.')
-			sb.WriteString(strings.ReplaceAll(rpt, "/", "_"))
-
-			return sb.String()
-		}
+		formatter = DefaultMetricsNameFormatter
 	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			defer func() {
-				label := formatter(namespace, r)
-
-				tags := make([]string, len(tt))
-				copy(tags, tt)
+				var (
+					label = formatter(namespace, r)
+					tags  = make(keyValues, 0)
+				)
 
 				// method
-				tags = append(tags, "method:"+r.Method)
+				tags = append(tags, []KeyValue{
+					{"method", r.Method},
+				}...)
+
 				// status code
 				if rw, ok := w.(WrapResponseWriter); ok {
-					tags = append(tags, "status_code:"+strconv.Itoa(rw.Status()))
+					tags = append(
+						tags,
+						KeyValue{"status_code", strconv.Itoa(rw.Status())},
+					)
 				}
-
-				c, ok := counters[label]
-				if !ok {
-					c = provider.NewCounter(label, 1)
-					counters[label] = c
-				}
-
-				c.With(tags...).Add(1)
 
 				h, ok := histograms[label]
 				if !ok {
 					h = provider.NewHistogram(label, 1)
 				}
 
-				h.With(tags...).Observe(float64(time.Since(start).Milliseconds()))
+				h.With(tags.tags()...).Observe(float64(time.Since(start).Milliseconds()))
 			}()
 
 			next.ServeHTTP(w, r)

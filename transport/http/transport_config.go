@@ -15,6 +15,8 @@ type (
 		Value string
 	}
 
+	keyValues []KeyValue
+
 	// config defines the properties used to initialise the
 	// transport.
 	// this is basically moving the initialisation of the transport
@@ -37,16 +39,10 @@ type (
 		// time outs for the http.Server
 		idleTimeout, readTimeout, writeTimeout time.Duration
 
-		logging      bool
-		traceLogging bool
-		logger       log.Logger
-
-		// metrics
-		metrics bool
+		logger log.Logger
 
 		// shared handlerOptions by all the APIs
 		transportOptions []TransportOption
-		handlerOptions   []HandlerOption
 
 		// transport level ffs, which applies to all paths
 		ffs []Filter
@@ -54,7 +50,7 @@ type (
 		// mux can be provided by the application as well
 		// default is nil, which means default multiplexer
 		// is used
-		muxOptions []DefaultMuxOption
+		muxOptions []ChiMuxOption
 
 		panicFormatter PanicFormatter
 	}
@@ -62,25 +58,32 @@ type (
 	TransportConfigOption func(*config) error
 )
 
+func (kv *KeyValue) String() string { return kv.Key + ":" + kv.Value }
+
+func (kvs keyValues) tags() []string {
+	ts := make([]string, 0)
+
+	for _, kv := range kvs {
+		ts = append(ts, kv.String())
+	}
+
+	return ts
+}
+
 func (c *config) filters() []Filter {
 	// default filters available by default to all routes
 	filters := []Filter{
-		closerFilter(), // closes the request
-		PanicRecoveryFilter( // handles panic
+		noopFilter(),
+		panicRecoveryFilter( // handles panic
 			c.logger,
 			WithCustomFormatter(c.panicFormatter),
 			WithStack(1024*8, false),
 		),
-		wrappedResponseWriterFilter(), // wraps response for easy status access
-		serverNameFilter(c.name, c.version),
-		requestIDFilter(),
-		decorateContextFilter(),
 		heartbeatFilter(c.name, c.heartbeats), // heartbeats for filter
-
-	}
-
-	if c.logging && c.traceLogging {
-		filters = append(filters, TraceLoggingFilter(c.logger))
+		serverNameFilter(c.name, c.version),
+		wrappedResponseWriterFilter(), // wraps response for easy status access
+		decorateContextFilter(),
+		requestIDFilter(),
 	}
 
 	// append rest of our filters
@@ -90,11 +93,17 @@ func (c *config) filters() []Filter {
 
 func (c *config) build() (*Transport, error) {
 	tr := &Transport{
-		Server:  &http.Server{Addr: c.host + ":" + c.port},
-		name:    c.name,
-		logger:  c.logger,
-		muxer:   NewDefaultMux(c.muxOptions...),
-		options: c.handlerOptions,
+		Server: &http.Server{
+			Addr:         c.host + ":" + c.port,
+			IdleTimeout:  c.idleTimeout,
+			ReadTimeout:  c.readTimeout,
+			WriteTimeout: c.writeTimeout,
+		},
+
+		name:           c.name,
+		logger:         c.logger,
+		muxer:          newChiMux(c.muxOptions...),
+		handlerOptions: []HandlerOption{},
 	}
 
 	for _, fn := range c.transportOptions {
@@ -114,30 +123,29 @@ func newConfig(name string) *config {
 	)
 
 	return &config{
-		name:             name,
-		version:          "v0.0.0",
-		host:             "0.0.0.0",
-		port:             "7001",
-		heartbeats:       []string{"/ping"},
-		idleTimeout:      90 * time.Second,
-		readTimeout:      5 * time.Second,
-		writeTimeout:     10 * time.Second,
-		logging:          true,
-		traceLogging:     true,
-		logger:           logger,
-		metrics:          true,
-		transportOptions: []TransportOption{},
-		handlerOptions: []HandlerOption{
-			NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
+		name:         name,
+		version:      "v0.0.0",
+		host:         "0.0.0.0",
+		port:         "7001",
+		heartbeats:   []string{"/ping"},
+		idleTimeout:  90 * time.Second,
+		readTimeout:  5 * time.Second,
+		writeTimeout: 10 * time.Second,
+		logger:       logger,
+		transportOptions: []TransportOption{
+			WithHandlerOption(
+				NewErrorEncoderHandlerOptions(kit_http.DefaultErrorEncoder),
+			),
 		},
 		ffs:            []Filter{},
-		muxOptions:     []DefaultMuxOption{},
+		muxOptions:     []ChiMuxOption{},
 		panicFormatter: &textPanicFormatter{},
 	}
 }
 
 func NewHTTPTransport(
-	name string, options ...TransportConfigOption,
+	name string,
+	options ...TransportConfigOption,
 ) (*Transport, error) {
 	cfg := newConfig(name)
 

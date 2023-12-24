@@ -61,12 +61,12 @@ func CleanPathFilter() Filter {
 // see https://github.com/go-chi/chi/issues/343
 func RedirectSlashFilter() Filter { return middleware.RedirectSlashes }
 
-// SetHeaderFilter is a convenience handler to set a response header key/value
-func SetHeaderFilter(key, value string) Filter { return middleware.SetHeader(key, value) }
+// SetResponseHeaderFilter is a convenience handler to set a response header key/value
+func SetResponseHeaderFilter(key, value string) Filter { return middleware.SetHeader(key, value) }
 
-// SetRequestHeader sets custom header for downstream to consume, useful if we
+// SetRequestHeaderFilter sets custom header for downstream to consume, useful if we
 // call other downstreams directly from http layer
-func SetRequestHeader(key, value string) Filter {
+func SetRequestHeaderFilter(key, value string) Filter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Header.Set(key, value)
@@ -112,5 +112,95 @@ func DeleteHeadersFilter(headers ...string) Filter {
 				next.ServeHTTP(w, r)
 			},
 		)
+	}
+}
+
+// WithChi allows you to use chi's supported middleware.
+// To see the list of available middlewares, refer https://github.com/go-chi/chi?tab=readme-ov-file#core-middlewares
+// For example, to use middleware.BasicAuth, set it as follows
+//
+//		transportConfigOptions := append(
+//			transportConfigOptions,
+//			[]http.TransportConfigOption{
+//				http.WithCustomHostPort(cx.String("http.host"), cx.String("http.port")),
+//				http.WithTraceLogging(),
+//				http.WithFilters(
+//					WithChi(middleware.BasicAuth(...)),
+//				),
+//			}...,
+//		),
+//	)
+func WithChi(middleware func(http.Handler) http.Handler) Filter {
+	return middleware
+}
+
+// ---- internal filters, shouldn't be used externally ----
+
+// serverNameFilter is simple filter to set custom 'server' header for response
+func serverNameFilter(name string, version string) Filter {
+	sn := name + "-" + version
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("server", sn)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// noopFilter is no-action filter
+func noopFilter() Filter {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// decorateContextFilter decorates the http.Request.Context() with
+// details about the http Request
+// List of keys can be found in http.go
+func decorateContextFilter() Filter {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(
+			w http.ResponseWriter,
+			r *http.Request,
+		) {
+			ctx := decorateContext(r.Context(), r)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// NoopFilter doesn't do anything
+func NoopFilter() Filter {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func heartbeatFilter(name string, heartbeats []string) Filter {
+	paths := make(map[string]struct{}, len(heartbeats))
+	for _, hb := range heartbeats {
+		paths[hb] = struct{}{}
+	}
+
+	message := name + " :: Ah, ha, ha, ha, stayin' alive, stayin' alive!"
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet || r.Method == http.MethodHead {
+					_, ok := paths[r.URL.Path]
+					if ok {
+						w.Header().Set("Content-Type", "text/plain")
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(message))
+						return
+					}
+				}
+				next.ServeHTTP(w, r)
+			})
 	}
 }

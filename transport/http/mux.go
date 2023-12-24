@@ -40,9 +40,9 @@ func (up URLParams) ByName(key string) (value string) {
 
 // go-chi muxer which is default multiplexer for go-base
 type (
-	chiMuxer         struct{ *chi.Mux }
-	chiURLParser     struct{}
-	DefaultMuxOption func(*chiMuxer)
+	chiMuxer     struct{ *chi.Mux }
+	chiURLParser struct{}
+	ChiMuxOption func(*chiMuxer)
 )
 
 func (cup *chiURLParser) Parse(r *http.Request) URLParams {
@@ -64,7 +64,7 @@ func (mx *chiMuxer) Handler(method, url string, fn http.Handler) {
 	mx.Method(method, url, fn)
 }
 
-func NewDefaultMux(opts ...DefaultMuxOption) Muxer {
+func newChiMux(opts ...ChiMuxOption) Muxer {
 	mx := &chiMuxer{chi.NewMux()}
 	for _, o := range opts {
 		o(mx)

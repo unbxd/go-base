@@ -21,9 +21,10 @@ type (
 		name string
 
 		logger log.Logger
-		muxer  Muxer
 
-		options []HandlerOption
+		muxer Muxer
+
+		handlerOptions []HandlerOption
 	}
 )
 
@@ -57,7 +58,6 @@ func NewTransport(
 	return NewHTTPTransport(
 		"gobi",
 		WithCustomHostPort(host, port),
-		WithNoMetrics(), // default metrics are turned off, use your own
-		WithDefaultTransportOptions(options...),
+		WithTransportOption(options...),
 	)
 }

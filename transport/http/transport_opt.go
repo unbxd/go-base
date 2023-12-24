@@ -22,14 +22,14 @@ func WithMuxer(mux Muxer) TransportOption {
 // Deprecated: use `WithProductionDefaults` for Production Environments, `WithDevDefaults` for Dev Env
 func WithFullDefaults() TransportOption {
 	return func(tr *Transport) {
-		tr.options = append(tr.options, []HandlerOption{}...)
+		tr.handlerOptions = append(tr.handlerOptions, []HandlerOption{}...)
 	}
 }
 
 // WithHandlerOption overrides the default HandlerOption for the transport
 func WithHandlerOption(options ...HandlerOption) TransportOption {
 	return func(tr *Transport) {
-		tr.options = append(tr.options, options...)
+		tr.handlerOptions = append(tr.handlerOptions, options...)
 	}
 }
 
@@ -43,8 +43,8 @@ func WithHandlerOption(options ...HandlerOption) TransportOption {
 // become default in next release
 func WithTransportErrorEncoder(fn ErrorEncoder) TransportOption {
 	return func(tr *Transport) {
-		tr.options = append(
-			tr.options,
+		tr.handlerOptions = append(
+			tr.handlerOptions,
 			NewErrorEncoderHandlerOptions(fn),
 		)
 	}
