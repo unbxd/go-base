@@ -64,34 +64,12 @@ func WithLogger(level string) TransportConfigOption {
 	}
 }
 
-// WithNoTraceLogging disables Trace-Logging of the server
-func WithNoTraceLogging() TransportConfigOption {
-	return func(c *config) (err error) {
-		c.traceLogging = false
-		return
-	}
-}
-
-// WithNoLogging disables logging completely
-func WithNoLogging() TransportConfigOption {
-	return func(c *config) (err error) {
-		c.logging = false
-		return
-	}
-}
-
-// WithNoMetrics disables all metrics emitted by the Transport
-func WithNoMetrics() TransportConfigOption {
-	return func(c *config) (err error) {
-		c.metrics = false
-		return
-	}
-}
-
 type OpenTelemetryProvider interface {
 	metric.MeterProvider
 	trace.TracerProvider
 }
+
+type OpenTelemetryRequestFilter otelhttp.Filter
 
 // filters all monitor APIs
 func filterMonitors(monitors []string) otelhttp.Filter {
@@ -109,23 +87,23 @@ func filterMonitors(monitors []string) otelhttp.Filter {
 }
 
 func WithOpenTelemetryMetrics(
+	enabled bool,
 	provider OpenTelemetryProvider,
 	tags []KeyValue,
-	filters ...otelhttp.Filter,
+	filters ...OpenTelemetryRequestFilter,
 ) TransportConfigOption {
 	return func(c *config) (err error) {
-		if c.metrics {
-			ff := []otelhttp.Filter{
-				filterMonitors(c.heartbeats),
+		if enabled {
+			ff := []OpenTelemetryRequestFilter{
+				OpenTelemetryRequestFilter(filterMonitors(c.heartbeats)),
 			}
 
 			ff = append(ff, filters...)
 
-			c.ffs = append(c.ffs, OpenTelemetryFilterForDefaultMux(
+			c.ffs = append(c.ffs, OpenTelemetryFilter(
 				c.name,
+				provider,
 				tags,
-				provider,
-				provider,
 				ff...,
 			))
 
@@ -137,25 +115,37 @@ func WithOpenTelemetryMetrics(
 // WithCustomMetrics lets you use `metrics.Counter`, `metrics.Histogram` & `metrics.Gauge` interfaces
 // instead of relying on some third party interfaces. Not passing custom formatter will result in
 // default formatter being used.
-func WithCustomMetrics(provider metrics.Provider, formatter MetricsNameFormatter, tags ...KeyValue) TransportConfigOption {
+func WithCustomMetrics(
+	enabled bool,
+	provider metrics.Provider,
+	formatter MetricsNameFormatter,
+) TransportConfigOption {
 	return func(c *config) (err error) {
-		if c.metrics {
-			c.ffs = append(c.ffs, CustomMetricsForDefaultMuxFilter(
+		if enabled {
+			c.ffs = append(c.ffs, CustomMetricsFilter(
 				c.name,
 				provider,
 				formatter,
-				tags...,
 			))
 		}
 		return
 	}
 }
 
-// WithDefaultTransportOptions can be used to set other overridable Transport Options
-func WithDefaultTransportOptions(options ...TransportOption) TransportConfigOption {
+// WithTransportOption can be used to set other overridable Transport Options
+func WithTransportOption(options ...TransportOption) TransportConfigOption {
 	return func(c *config) (err error) {
 		c.transportOptions = append(c.transportOptions, options...)
 		return
+	}
+}
+
+func WithHandlerOptionForTransport(options ...HandlerOption) TransportConfigOption {
+	return func(c *config) (err error) {
+		for _, o := range options {
+			c.transportOptions = append(c.transportOptions, WithHandlerOption(o))
+		}
+		return nil
 	}
 }
 
@@ -199,5 +189,12 @@ func WithDefaultPanicFormatter(panicFormatterType PanicFormatterType) TransportC
 			c.panicFormatter = &textPanicFormatter{}
 		}
 		return
+	}
+}
+
+func WithTraceLogging(fieldsGens ...TraceLogFieldsGen) TransportConfigOption {
+	return func(c *config) error {
+		c.ffs = append(c.ffs, TraceLoggingFilter(c.logger, fieldsGens...))
+		return nil
 	}
 }
