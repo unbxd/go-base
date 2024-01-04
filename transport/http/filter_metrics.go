@@ -108,7 +108,6 @@ func DefaultMetricsNameFormatter(namespace string, r *http.Request) string {
 
 	rpt := rcx.RoutePattern()
 
-	sb.WriteString(namespace)
 	sb.WriteRune('.')
 	sb.WriteString(strings.ReplaceAll(rpt, "/", "_"))
 
