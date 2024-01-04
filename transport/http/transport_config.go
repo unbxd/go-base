@@ -58,13 +58,14 @@ type (
 	TransportConfigOption func(*config) error
 )
 
-func (kv *KeyValue) String() string { return kv.Key + ":" + kv.Value }
+func (kv *KeyValue) String() string    { return kv.Key + ":" + kv.Value }
+func (kv *KeyValue) Strings() []string { return []string{kv.Key, kv.Value} }
 
 func (kvs keyValues) tags() []string {
 	ts := make([]string, 0)
 
 	for _, kv := range kvs {
-		ts = append(ts, kv.String())
+		ts = append(ts, kv.Strings()...)
 	}
 
 	return ts
@@ -109,7 +110,8 @@ func (c *config) build() (*Transport, error) {
 
 	tr.muxer.Use(c.ffs...)
 
-	tr.Handler = Chain(tr.muxer, c.filters()...)
+	tr.Handler = chain(tr.muxer, c.filters()...)
+
 	return tr, nil
 }
 
