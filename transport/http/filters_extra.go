@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	net_http "net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -83,7 +82,7 @@ func CorsFilterWithDefaults() Filter {
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:   []string{net_http.MethodGet, net_http.MethodHead, net_http.MethodOptions},
+		AllowedMethods:   []string{http.MethodGet, http.MethodHead, http.MethodOptions},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Accept-Encoding", "X-Request-ID"},
 		ExposedHeaders:   []string{"X-Request-Id", "trace-id", "Link"},
 		AllowCredentials: false,
@@ -102,9 +101,9 @@ func CorsFilterWithCustomOptions(options CorsOptions) Filter {
 
 // DeleteHadersFilter deletes the headers in http request
 func DeleteHeadersFilter(headers ...string) Filter {
-	return func(next net_http.Handler) net_http.Handler {
+	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
-			func(w net_http.ResponseWriter, r *net_http.Request) {
+			func(w http.ResponseWriter, r *http.Request) {
 				for _, h := range headers {
 					r.Header.Del(h)
 				}

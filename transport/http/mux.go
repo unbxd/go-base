@@ -19,6 +19,8 @@ type (
 
 		// Default Handler Method is all that is needed
 		Handler(method, url string, fn http.Handler)
+
+		Use(filters ...Filter)
 	}
 )
 
@@ -64,6 +66,16 @@ func (mx *chiMuxer) Handler(method, url string, fn http.Handler) {
 	mx.Method(method, url, fn)
 }
 
+func (mx *chiMuxer) Use(filters ...Filter) {
+	cfs := make([]func(http.Handler) http.Handler, 0)
+
+	for _, f := range filters {
+		cfs = append(cfs, f)
+	}
+
+	mx.Mux.Use(cfs...)
+}
+
 func newChiMux(opts ...ChiMuxOption) Muxer {
 	mx := &chiMuxer{chi.NewMux()}
 	for _, o := range opts {
@@ -92,6 +104,16 @@ func (gm *gmux) URLParser() URLParser {
 
 func (gm *gmux) Handler(method, url string, fn http.Handler) {
 	gm.Router.Handle(url, fn).Methods(method)
+}
+
+func (gm *gmux) Use(filters ...Filter) {
+	mf := make([]gorilla_mux.MiddlewareFunc, 0)
+
+	for _, f := range filters {
+		mf = append(mf, gorilla_mux.MiddlewareFunc(f))
+	}
+
+	gm.Router.Use(mf...)
 }
 
 func NewGorillaMux() Muxer { return &gmux{gorilla_mux.NewRouter()} }
