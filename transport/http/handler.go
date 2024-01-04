@@ -182,7 +182,7 @@ func newHandler(fn Handler, options ...HandlerOption) *handler {
 	)
 
 	if hn.filters != nil {
-		handler = Chain(handler, hn.filters...)
+		handler = chain(handler, hn.filters...)
 	}
 
 	hn.Handler = handler
