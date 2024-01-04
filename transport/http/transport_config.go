@@ -85,9 +85,6 @@ func (c *config) filters() []Filter {
 		decorateContextFilter(),
 		requestIDFilter(),
 	}
-
-	// append rest of our filters
-	filters = append(filters, c.ffs...)
 	return filters
 }
 
@@ -109,6 +106,8 @@ func (c *config) build() (*Transport, error) {
 	for _, fn := range c.transportOptions {
 		fn(tr)
 	}
+
+	tr.muxer.Use(c.ffs...)
 
 	tr.Handler = Chain(tr.muxer, c.filters()...)
 	return tr, nil
