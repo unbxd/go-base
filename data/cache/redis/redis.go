@@ -13,6 +13,7 @@ import (
 	"time"
 
 	redis "github.com/redis/go-redis/v9"
+	"github.com/unbxd/go-base/v2/errors"
 	"github.com/unbxd/go-base/v2/log"
 )
 
@@ -258,6 +259,15 @@ func NewRedisCache(
 
 	// create client
 	cc := redis.NewClient(ch.opt)
+
+	sc := cc.Ping(context.Background())
+	if sc.Err() != nil {
+		return nil, errors.Wrapf(
+			sc.Err(),
+			"failed to connect to redis. addr: %s",
+			addr,
+		)
+	}
 
 	ch.cc = cc
 	return &Cache{ch}, nil
