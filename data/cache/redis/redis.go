@@ -117,7 +117,10 @@ func (c *cache) delete(
 	}
 
 	if rc == 0 {
-		return fmt.Errorf("no item deleted for key: %s", key)
+		c.logger.Debug(
+			"no item deleted for key",
+			log.String("key", key),
+		)
 	}
 
 	return nil
