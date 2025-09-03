@@ -212,13 +212,16 @@ func (c *cache) Delete(
 	cx context.Context,
 	key string,
 ) {
-	err := c.delete(cx, key)
-	if err != nil {
-		c.logger.Error(
-			"failed to delete data from redis",
-			log.String("key", key),
-			log.Error(err),
-		)
+	exists, err := c.exists(cx, key)
+	if exists || err != nil {
+		err = c.delete(cx, key)
+		if err != nil {
+			c.logger.Error(
+				"failed to delete data from redis",
+				log.String("key", key),
+				log.Error(err),
+			)
+		}
 	}
 }
 
